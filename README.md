@@ -1,1 +1,27 @@
 # car_magnet_app
+
+##Project Overview
+
+This project will provide automated advertisement designs, primarily focusing on car magnet designs. Core advantages of this app will be in the design of two-door magnets catered to cars of any size. Two-door car magnets are magnets pieced together by two separate magnets, one on the front door, the second on the rear door. 
+
+## Setup
+
+All src code resides in the **app** directory. This project uses App Routers to navigate between pages.
+
+This project uses a serverless postgres database via NeonDB, manipulated with Drizzle ORM instead of raw SQL. 
+
+To view the site, run `pnpm install` in the auto_magnet_design directory. Make sure to approve builds for post-install scripts if necessary.
+
+Then run `pnpm run dev`, and navigate to the url shown in the terminal.
+
+A minimal register/login functionality is present for now. A full features list can be found in doc/sprint0/product.md. 
+
+## Contribution Guidelines
+Contributors can push documentations to main directly, but must open Pull Requests to main for functionality changes of the app.
+
+## Branching Strategy
+
+A variation of Git Flow will be used, with the only difference being when two people work on the same feature, their branches will be prefixed with their names.
+
+## Ticketing Guidelines
+Immediate to-dos will be specified in the Slack channel. Product backlog tickets will be completed on Jira. 
