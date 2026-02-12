@@ -16,10 +16,14 @@ export default function LoadingPage() {
           return
         }
 
+        // Get two_door from localStorage, default to true (two-door)
+        const twoDoorValue = localStorage.getItem("two_door")
+        const two_door = twoDoorValue === null ? true : twoDoorValue === "true"
+
         const res = await fetch("/api/gemini", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userText: bannerText }),
+          body: JSON.stringify({ userText: bannerText, two_door }),
         })
 
         if (!res.ok) {
