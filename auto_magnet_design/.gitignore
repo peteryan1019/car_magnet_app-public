@@ -22,6 +22,7 @@
 
 # misc
 .DS_Store
+./doc/.DS_Store
 *.pem
 
 # debug
@@ -39,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated images
+/public/gemini_generated/
