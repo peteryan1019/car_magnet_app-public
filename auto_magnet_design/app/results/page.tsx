@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import ExportButton from "../components/ExportButton"
 
 export default function ResultsPage() {
   const [images, setImages] = useState<string[]>([])
@@ -109,6 +110,7 @@ export default function ResultsPage() {
                 alt={`Generated banner ${index + 1}`}
                 className="w-full h-auto"
               />
+              <ExportButton imgsrc={imageUrl}></ExportButton>
             </div>
           ))}
         </div>
