@@ -1,6 +1,6 @@
 # car_magnet_app
 
-##Project Overview
+## Project Overview
 
 This project will provide automated advertisement designs, primarily focusing on car magnet designs. Core advantages of this app will be in the design of two-door magnets catered to cars of any size. Two-door car magnets are magnets pieced together by two separate magnets, one on the front door, the second on the rear door. 
 
@@ -11,6 +11,13 @@ This project using the NextJs framework with Typescript and App Routers.
 All src code resides in the **app** directory.
 
 The backend uses serverless postgres databases via NeonDB to enable future scaling, and all database operations are carried out using Drizzle ORM instead of raw SQL for type safety and security. 
+
+In order for the site to access the database, add the following to a .env file in the auto_magnet_design directory.
+```
+DATABASE_URL="your_connection_url"
+JWT_SECRET="some_string"
+```
+Where "your_connection_url" is a connection string for a NeonDB database for the site to use, and "some_string" is any string.
 
 To view the site, run `pnpm install` in the auto_magnet_design directory. Make sure to approve builds for post-install scripts if necessary.
 
