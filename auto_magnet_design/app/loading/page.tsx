@@ -17,7 +17,7 @@ export default function LoadingPage() {
         }
 
         // Check if API key exists before making request
-        const hasApiKey = process.env.GEMINI_API_KEY === "abcde"
+        const hasApiKey = process.env.NEXT_PUBLIC_HAS_GEMINI_KEY === "true"
         
         if (!hasApiKey) {
           // No API key configured, use default image only
