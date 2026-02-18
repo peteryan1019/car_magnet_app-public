@@ -20,10 +20,13 @@ export default function LoadingPage() {
         const hasApiKey = process.env.NEXT_PUBLIC_HAS_GEMINI_KEY === "true"
         
         if (!hasApiKey) {
-          // No API key configured, use default image only
-          const defaultImage = "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png"
-          localStorage.setItem("generatedImages", JSON.stringify([defaultImage]))
-          console.log("No API key configured, using default image");
+          // No API key configured, use default images only
+          const defaultImages = [
+            "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
+            "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
+          ]
+          localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
+          console.log("No API key configured, using default images");
           router.push("/results")
           return
         }
@@ -39,10 +42,13 @@ export default function LoadingPage() {
         })
 
         if (!res.ok) {
-          // API call failed, use default image only
-          const defaultImage = "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png"
-          localStorage.setItem("generatedImages", JSON.stringify([defaultImage]))
-          console.log("API call failed, using default image");
+          // API call failed, use default images only
+          const defaultImages = [
+            "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
+            "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
+          ]
+          localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
+          console.log("API call failed, using default images");
           router.push("/results")
           return
         }
@@ -55,10 +61,13 @@ export default function LoadingPage() {
         router.push("/results")
       } catch (error) {
         console.error("Error generating image:", error)
-        // If API call fails, use default image only
-        const defaultImage = "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png"
-        localStorage.setItem("generatedImages", JSON.stringify([defaultImage]))
-        console.log("Exception caught, using default image");
+        // If API call fails, use default images only
+        const defaultImages = [
+          "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
+          "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
+        ]
+        localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
+        console.log("Exception caught, using default images");
         router.push("/results")
       }
     }
