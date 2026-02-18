@@ -16,6 +16,18 @@ export default function LoadingPage() {
           return
         }
 
+        // Check if API key exists before making request
+        const hasApiKey = process.env.GEMINI_API_KEY === "abcde"
+        
+        if (!hasApiKey) {
+          // No API key configured, use default image only
+          const defaultImage = "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png"
+          localStorage.setItem("generatedImages", JSON.stringify([defaultImage]))
+          console.log("No API key configured, using default image");
+          router.push("/results")
+          return
+        }
+
         // Get two_door from localStorage, default to true (two-door)
         const twoDoorValue = localStorage.getItem("two_door")
         const two_door = twoDoorValue === null ? true : twoDoorValue === "true"
@@ -27,20 +39,26 @@ export default function LoadingPage() {
         })
 
         if (!res.ok) {
-          const msg = await res.text()
-          throw new Error(msg || `Request failed with ${res.status}`)
+          // API call failed, use default image only
+          const defaultImage = "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png"
+          localStorage.setItem("generatedImages", JSON.stringify([defaultImage]))
+          console.log("API call failed, using default image");
+          router.push("/results")
+          return
         }
 
         const data = await res.json()
 
-        localStorage.setItem("generatedImages", JSON.stringify(data.urls))
-        // const urls = JSON.parse(data.urls)
+        // API call succeeded, use only generated images (no default)
+        localStorage.setItem("generatedImages", JSON.stringify(data.urls || []))
         console.log("here's the loading page's imageUrls: ", data.urls);
         router.push("/results")
       } catch (error) {
         console.error("Error generating image:", error)
-        // Store error and navigate to results to show error state
-        localStorage.setItem("generationError", error instanceof Error ? error.message : "Something went wrong.")
+        // If API call fails, use default image only
+        const defaultImage = "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png"
+        localStorage.setItem("generatedImages", JSON.stringify([defaultImage]))
+        console.log("Exception caught, using default image");
         router.push("/results")
       }
     }
