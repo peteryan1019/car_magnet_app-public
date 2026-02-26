@@ -40,7 +40,7 @@ export default function Page() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-6 bg-gray-50">
+    <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-6">
       <h1 className="text-2xl font-bold">Default user preferences</h1>
 
       <div className="flex flex-col gap-2 w-80">
@@ -133,7 +133,7 @@ export default function Page() {
         <div className="flex gap-4">
           <button
             className={`px-4 py-2 rounded ${
-              isTwoDoor === "true" ? "bg-blue-500 text-white" : "bg-gray-200"
+              isTwoDoor === "true" ? "bg-blue-500 text-white" : "bg-gray-800"
             }`}
             onClick={() => setIsTwoDoor("true")}
           >
@@ -142,7 +142,7 @@ export default function Page() {
 
           <button
             className={`px-4 py-2 rounded ${
-              isTwoDoor === "false" ? "bg-blue-500 text-white" : "bg-gray-200"
+              isTwoDoor === "false" ? "bg-blue-500 text-white" : "bg-gray-800"
             }`}
             onClick={() => setIsTwoDoor("false")}
           >
