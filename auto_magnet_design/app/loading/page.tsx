@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { saveDesignsAction } from "@/app/actions/design-actions"
 
 export default function LoadingPage() {
   const router = useRouter()
@@ -34,6 +35,14 @@ export default function LoadingPage() {
         const data = await res.json()
 
         localStorage.setItem("generatedImages", JSON.stringify(data.urls))
+        
+        // Save to My Designs database
+        try {
+            await saveDesignsAction(data.urls);
+        } catch (saveError) {
+            console.error("Failed to save designs to database", saveError);
+        }
+
         // const urls = JSON.parse(data.urls)
         console.log("here's the loading page's imageUrls: ", data.urls);
         router.push("/results")

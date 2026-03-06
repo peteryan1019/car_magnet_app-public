@@ -34,7 +34,7 @@ export default function Page() {
       <section className="text-center max-w-[880px] w-full">
         <h1 className="text-2xl mb-3">Banner Generator</h1>
         <p className="text-white/85 mb-5">
-          This uses Nano-Banan's image generation API. Your image is referenced by URL in the prompt.
+          Create a banner in 30 seconds.
         </p>
 
         <button

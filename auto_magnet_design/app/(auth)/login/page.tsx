@@ -10,7 +10,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-cyan-100 p-4">
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden -translate-y-[100px]">
         <div className="p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-blue-900 tracking-tight">
@@ -30,36 +30,29 @@ export default function LoginPage() {
 
           <form action={action} className="space-y-6">
             <div>
-              
-              <div className="relative">
-                <div className="w-[200px] h-[200px]">
-                  Enter Username
-                </div>
-                <input
-                  name="username"
-                  type="text"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-                  placeholder="johndoe"
-                />
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <input
+                name="username"
+                type="text"
+                required
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none placeholder-gray-300 text-gray-900"
+                placeholder="johndoe"
+              />
             </div>
 
-            <div className="p-[20px] m-[24px]">
-              <div className="flex justify-between items-center mb-2">
-              </div>
-              <div className="relative mb-[24px] p-[20px]">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    Enter Password
-                </div>
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-                  placeholder="••••••••"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Password
+              </label>
+              <input
+                name="password"
+                type="password"
+                required
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all outline-none placeholder-gray-300 text-gray-900"
+                placeholder="••••••••"
+              />
             </div>
 
             <button

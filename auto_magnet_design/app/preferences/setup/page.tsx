@@ -40,14 +40,15 @@ export default function Page() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-6 bg-gray-50">
-      <h1 className="text-2xl font-bold">Default user preferences</h1>
+    <div className="flex flex-col items-center min-h-[calc(100vh-73px)] gap-6 p-6 md:p-12 bg-slate-900 text-white font-sans">
+      <h1 className="text-3xl font-bold text-center tracking-tight mb-4">Set Your Preferences</h1>
 
-      <div className="flex flex-col gap-2 w-80">
-        <label className="font-semibold">Select Car Type</label>
-        <select
-          className="border p-2 rounded"
-          onChange={(e) => {
+      <div className="flex flex-col gap-8 w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
+        <div className="flex flex-col gap-2">
+          <label className="font-semibold text-slate-300">Select Car Type</label>
+          <select
+            className="border border-slate-600 bg-slate-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            onChange={(e) => {
             const type = e.target.value;
 
             let suggested: Dimensions | null = null;
@@ -96,44 +97,46 @@ export default function Page() {
       </div>
 
     {carType === "custom" && (
-      <div className="flex flex-col gap-3 w-80">
-        <label className="font-semibold">Custom Dimensions (inches)</label>
+      <div className="flex flex-col gap-3">
+        <label className="font-semibold text-slate-300">Custom Dimensions (inches)</label>
 
-        <input
-          type="number"
-          placeholder="Width"
-          className="border p-2 rounded"
-          onChange={(e) => {
-            const width = Number(e.target.value);
-            if (dimInches) {
-              const updated = { ...dimInches, width };
-              setDimInches(updated);
-            }
-          }}
-        />
+        <div className="flex gap-4">
+          <input
+            type="number"
+            placeholder="Width"
+            className="w-full border border-slate-600 bg-slate-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-400"
+            onChange={(e) => {
+              const width = Number(e.target.value);
+              if (dimInches) {
+                const updated = { ...dimInches, width };
+                setDimInches(updated);
+              }
+            }}
+          />
 
-        <input
-          type="number"
-          placeholder="Height"
-          className="border p-2 rounded"
-          onChange={(e) => {
-            const height = Number(e.target.value);
-            if (dimInches) {
-              const updated = { ...dimInches, height };
-              setDimInches(updated);
-            }
-          }}
-        />
+          <input
+            type="number"
+            placeholder="Height"
+            className="w-full border border-slate-600 bg-slate-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-400"
+            onChange={(e) => {
+              const height = Number(e.target.value);
+              if (dimInches) {
+                const updated = { ...dimInches, height };
+                setDimInches(updated);
+              }
+            }}
+          />
+        </div>
       </div>
     )}
 
-      <div className="flex flex-col gap-2 items-center">
-        <span className="font-semibold">Will the design span two doors?</span>
+      <div className="flex flex-col gap-3">
+        <label className="font-semibold text-slate-300">Will the design span two doors?</label>
 
         <div className="flex gap-4">
           <button
-            className={`px-4 py-2 rounded ${
-              isTwoDoor === "true" ? "bg-blue-500 text-white" : "bg-gray-200"
+            className={`flex-1 py-3 font-semibold rounded-lg transition-all ${
+              isTwoDoor === "true" ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
             onClick={() => setIsTwoDoor("true")}
           >
@@ -141,8 +144,8 @@ export default function Page() {
           </button>
 
           <button
-            className={`px-4 py-2 rounded ${
-              isTwoDoor === "false" ? "bg-blue-500 text-white" : "bg-gray-200"
+            className={`flex-1 py-3 font-semibold rounded-lg transition-all ${
+              isTwoDoor === "false" ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
             onClick={() => setIsTwoDoor("false")}
           >
@@ -151,11 +154,11 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 w-80">
-        <label className="font-semibold">DPI</label>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-slate-300">DPI Quality</label>
         <select
           value={dpi}
-          className="border p-2 rounded"
+          className="border border-slate-600 bg-slate-700 text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           onChange={(e) => {
             const newDpi = Number(e.target.value);
             setDpi(newDpi);
@@ -176,29 +179,27 @@ export default function Page() {
 
       {/* Display Dimensions */}
       {dimInches && (
-        <div className="text-center">
-          <p>
-            <strong>Inches:</strong> {dimInches.width}" x {dimInches.height}"
+        <div className="bg-slate-700/50 p-4 rounded-lg flex flex-col items-center justify-center border border-slate-600">
+          <p className="text-slate-300">
+            <span className="font-semibold text-white">Inches:</span> {dimInches.width}" x {dimInches.height}"
           </p>
+          {dimPx && (
+            <p className="text-slate-300">
+              <span className="font-semibold text-white">Pixels:</span> {dimPx.width}px x {dimPx.height}px
+            </p>
+          )}
         </div>
       )}
 
-      {dimPx && (
-        <div className="text-center">
-          <p>
-            <strong>Pixels:</strong> {dimPx.width}px x {dimPx.height}px
-          </p>
-        </div>
-      )}
-
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-400 font-medium text-center">{error}</p>}
 
       <button
         onClick={storePreferences}
-        className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+        className="w-full bg-blue-600 text-white font-bold px-6 py-4 rounded-lg hover:bg-blue-500 hover:shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all mt-4"
       >
         Continue to Design
       </button>
+      </div>
     </div>
   );
 }
