@@ -7,8 +7,17 @@ export default async function NavBar() {
 
   return (
     <nav className="flex items-center justify-between p-4 bg-white border-b shadow-sm">
-      <div className="text-xl font-bold text-indigo-600">
-        <Link href="/">AutoMagnet</Link>
+      <div className="flex items-center gap-6">
+        <div className="text-xl font-bold text-indigo-600">
+          <Link href="/">AutoMagnet</Link>
+        </div>
+        <div className="flex items-center gap-4 text-sm font-medium text-gray-700">
+          <Link href="/" className="hover:text-indigo-600 transition-colors">Home</Link>
+          <Link href="/design" className="hover:text-indigo-600 transition-colors">Design</Link>
+          {session && (
+            <Link href="/mydesigns" className="hover:text-indigo-600 transition-colors">My Designs</Link>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
