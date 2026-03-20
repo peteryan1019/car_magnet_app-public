@@ -1,10 +1,13 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
-import { Dimensions } from "../types"
-import DoorCutSelector from "./door-cut"
+type Dimensions = {
+    width: number,
+    height: number
+}
+//import DoorCutSelector from "./door-cut"
 
 export default function Page() {
   const [titleText, setTitleText] = useState<string>("Let's set up your preferences");
@@ -81,7 +84,7 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-6">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-73px)] gap-6 p-6 bg-slate-900">
       <h1 className="text-2xl font-bold">{titleText}</h1>
 
       <div className="flex flex-col gap-2 w-80">
@@ -177,7 +180,7 @@ export default function Page() {
         <div className="flex gap-4">
           <button
             className={`px-4 py-2 rounded ${
-              isTwoDoor === "true" ? "bg-blue-500 text-white" : "bg-gray-800"
+              isTwoDoor === "true" ? "bg-blue-600 text-white" : "bg-gray-800 hover:bg-blue-700"
             }`}
             onClick={() => setIsTwoDoor("true")}
           >
@@ -186,7 +189,7 @@ export default function Page() {
 
           <button
             className={`px-4 py-2 rounded ${
-              isTwoDoor === "false" ? "bg-blue-500 text-white" : "bg-gray-800"
+              isTwoDoor === "false" ? "bg-blue-600 text-white" : "bg-gray-800 hover:bg-blue-700"
             }`}
             onClick={() => setIsTwoDoor("false")}
           >
@@ -262,7 +265,7 @@ export default function Page() {
 
       <button
         onClick={storePreferences}
-        className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
       >
         Continue to Design
       </button>
