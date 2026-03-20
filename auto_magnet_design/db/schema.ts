@@ -1,5 +1,5 @@
 // db/schema.ts
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -13,4 +13,11 @@ export const salt = pgTable("salt", {
   // references the username in the users table
   username: text("username").references(() => users.username).notNull(),
   salt: text("salt").notNull(),
+});
+
+export const designs = pgTable("designs", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  imageUrl: text("imageUrl").notNull(),
+  dateCreated: timestamp("dateCreated").defaultNow().notNull(),
 });
