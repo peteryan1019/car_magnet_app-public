@@ -8,6 +8,7 @@ export default function ExportPage() {
     const [src, setSrc] = useState("");
 
     return <div className="flex">
-        <ModelPreview imgsrc="https://i0.wp.com/thetac.tech/wp-content/uploads/2024/09/placeholder-288.png?fit=1200%2C800&ssl=1&w=640"></ModelPreview>
+        <ModelPreview imgsrc="https://miro.medium.com/v2/resize:fit:1400/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg"
+        carType="minivan"></ModelPreview>
     </div>
 }
