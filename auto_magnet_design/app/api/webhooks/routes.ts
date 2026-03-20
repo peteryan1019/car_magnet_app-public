@@ -1,0 +1,57 @@
+import Stripe from "stripe";
+import { sql } from "@/lib/db";
+import { buffer } from "micro";
+
+export const config = { api: { bodyParser: false } };
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2022-11-15",
+});
+
+export async function POST(req: Request) {
+  const buf = await buffer(req);
+  const sig = req.headers.get("stripe-signature")!;
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      buf,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err: any) {
+    console.error("Webhook signature verification failed.", err.message);
+    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  }
+
+  // Handle the event
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    try {
+      await sql`
+        INSERT INTO orders (
+          stripe_payment_id,
+          email,
+          amount,
+          currency,
+          status,
+          created_at
+        ) VALUES (
+          ${session.id},
+          ${session.customer_details?.email},
+          ${session.amount_total},
+          ${session.currency},
+          ${session.payment_status},
+          NOW()
+        )
+        ON CONFLICT (stripe_payment_id) DO NOTHING
+      `;
+      console.log("Order saved:", session.id);
+    } catch (dbErr) {
+      console.error("Error saving order to Neon:", dbErr);
+    }
+  }
+
+  return new Response(JSON.stringify({ received: true }), { status: 200 });
+}
