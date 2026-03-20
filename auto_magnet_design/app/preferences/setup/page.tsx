@@ -14,7 +14,51 @@ export default function Page() {
 
   const [error, setError] = useState<String | null>(null);
   
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  
   const router = useRouter();
+
+  const handleUpload = async () => {
+    if (!logoFile) return;
+    setIsUploading(true);
+    setError(null);
+    try {
+      // 1. Get a secure Signed URL from our backend
+      const res = await fetch("/api/upload-logo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fileName: logoFile.name,
+          contentType: logoFile.type
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to get upload URL");
+      
+      // 2. Upload directly to Google Cloud Storage, bypassing our Next.js server!
+      const uploadRes = await fetch(data.signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": logoFile.type || "application/octet-stream"
+        },
+        body: logoFile,
+      });
+
+      if (!uploadRes.ok) throw new Error("Failed to upload file to storage bucket");
+
+      // 3. Save the returned public URL so it displays in your design page
+      setLogoUrl(data.publicUrl);
+      localStorage.setItem("logo_url", data.publicUrl);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (dimInches) {
@@ -152,6 +196,29 @@ export default function Page() {
             No
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <label className="font-semibold text-slate-300">Upload Logo</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+            className="flex-1 text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+          />
+          <button
+            onClick={handleUpload}
+            disabled={!logoFile || isUploading}
+            className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-500 transition-all"
+          >
+            {isUploading ? "Uploading..." : "Upload"}
+          </button>
+        </div>
+        {logoUrl && (
+          <p className="text-green-400 text-sm mt-1">
+            Logo uploaded successfully!
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
