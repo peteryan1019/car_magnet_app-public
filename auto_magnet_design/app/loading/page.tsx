@@ -59,8 +59,16 @@ export default function LoadingPage() {
 
         const data = await res.json()
 
-        // API call succeeded, use only generated images (no default)
-        localStorage.setItem("generatedImages", JSON.stringify(data.urls || []))
+        localStorage.setItem("generatedImages", JSON.stringify(data.urls))
+        
+        // Save to My Designs database
+        try {
+            await saveDesignsAction(data.urls);
+        } catch (saveError) {
+            console.error("Failed to save designs to database", saveError);
+        }
+
+        // const urls = JSON.parse(data.urls)
         console.log("here's the loading page's imageUrls: ", data.urls);
         router.push("/results")
       } catch (error) {
