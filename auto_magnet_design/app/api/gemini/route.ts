@@ -13,6 +13,45 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY, // defaults to process.env["ANTHROPIC_API_KEY"]
 });
 
+function getSignedJwt(clientEmail: string, privateKey: string) {
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const iat = Math.floor(Date.now() / 1000);
+  const exp = iat + 3600;
+  const payload = {
+    iss: clientEmail,
+    scope: 'https://www.googleapis.com/auth/devstorage.read_write',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp,
+    iat
+  };
+
+  const encodeBase64Url = (obj: any) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const signatureInput = `${encodeBase64Url(header)}.${encodeBase64Url(payload)}`;
+  
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(signatureInput);
+  sign.end();
+  const signature = sign.sign(privateKey, 'base64url');
+  
+  return `${signatureInput}.${signature}`;
+}
+
+async function getAccessToken(clientEmail: string, privateKey: string) {
+  const jwt = getSignedJwt(clientEmail, privateKey);
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error_description || 'Failed to get GCS access token');
+  }
+  return data.access_token;
+}
+
 async function enhancePrompt(user_input: string, aspectRatio: string): Promise<string> {
   try {
     const response = await anthropic.messages.create({
@@ -45,8 +84,29 @@ export async function POST(req: NextRequest) {
   try {
     const overallStartTime = Date.now();
     
-    const { userText, two_door } = await req.json();
+    const { userText, two_door, logoUrl } = await req.json();
     const anthropic = new Anthropic();
+
+    // Fetch the logo if provided, to convert it to base64 inline data for Gemini
+    let logoInlineData = null;
+    if (logoUrl) {
+      try {
+        console.log(`[v0] Fetching uploaded logo from: ${logoUrl}`);
+        const logoRes = await fetch(logoUrl);
+        if (logoRes.ok) {
+          const logoBuffer = await logoRes.arrayBuffer();
+          logoInlineData = {
+            mimeType: logoRes.headers.get("content-type") || "image/png",
+            data: Buffer.from(logoBuffer).toString("base64"),
+          };
+          console.log(`[v0] Successfully converted logo to base64`);
+        } else {
+          console.error(`[v0] Failed to fetch logo. Status: ${logoRes.status}`);
+        }
+      } catch (err) {
+        console.error("[v0] Logo fetch error:", err);
+      }
+    }
 
     // Determine aspect ratio based on two_door value
     const aspectRatio = two_door === true ? "3:1" : "16:9";
@@ -54,7 +114,12 @@ export async function POST(req: NextRequest) {
 
     console.log(`[v0] Enhancing prompt with Claude...`);
     const promptStartTime = Date.now();
-    const enhanced_prompt = await enhancePrompt(userText, aspectRatio);
+    // const enhanced_prompt = await enhancePrompt(userText, aspectRatio);
+    let enhanced_prompt = userText; // will replace the prompt enhancement logic with a better one after implementing the blob logic for nano banana api calls.
+    if (logoInlineData) {
+      // Append specific instructions for the logo styling mapping
+      enhanced_prompt += `\nGenerate a banner with text "${userText}" that has the style of the provided logo and the aspect ratio of the blank canvas.`;
+    }
     const promptEndTime = Date.now();
     const promptTime = ((promptEndTime - promptStartTime) / 1000).toFixed(2);
     console.log(`[v0] ✓ Prompt enhanced in ${promptTime}s`);
@@ -65,7 +130,7 @@ export async function POST(req: NextRequest) {
         //   prompt: enhanced_prompt,
         // },
       {
-        imagePath: "ben-frame.jpg",
+        imagePath: "blank-canvas.png",
         prompt: enhanced_prompt,
       },
         // {
@@ -83,19 +148,28 @@ export async function POST(req: NextRequest) {
       const imagePath = `${abs}`;
       console.log(`[v0] Processing image ${i + 1}: ${imagePath}`);
 
-      const imageData = fs.readFileSync(imagePath);
+      const imageData = await fsp.readFile(imagePath);
       const base64Image = imageData.toString("base64");
 
       // Prepare the content parts
-      const contents = [
+      const contents: any[] = [
         { text: config.prompt },
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: base64Image,
-          },
-        },
       ];
+
+      // Add logo inline data if present (before the aspect-ratio reference image)
+      if (logoInlineData) {
+        contents.push({
+          inlineData: logoInlineData,
+        });
+      }
+
+      // Add the aspect-ratio reference image as the very last image
+      contents.push({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64Image,
+        },
+      });
 
       const resolution = '1K';
 
@@ -116,18 +190,40 @@ export async function POST(req: NextRequest) {
         if (part.text) {
           console.log(`[v0] Response ${i + 1}:`, part.text);
         } else if (part.inlineData) {
-          // Ensure /public/gemini_generated exists
-          const outDir = path.join(process.cwd(), "public", "gemini_generated");
-          await fsp.mkdir(outDir, { recursive: true });
-
           const filename = `banner-${Date.now()}-${i + 1}-${crypto.randomUUID()}.png`;
-          const outPath = path.join(outDir, filename);
           const imageData = part.inlineData.data;
           const buffer = Buffer.from(imageData!, "base64");
-          await fsp.writeFile(outPath, buffer);
+          
+          const bucketName = process.env.GOOGLE_CLOUD_STORAGE_BUCKET;
+          const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+          let privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
-          const publicUrlPath = `/gemini_generated/${filename}`;
-          console.log(`[v0] Image ${i + 1} saved:`, publicUrlPath);
+          if (!bucketName || !clientEmail || !privateKey) {
+             throw new Error("GCS credentials missing. Cannot upload generated image.");
+          }
+          privateKey = privateKey.replace(/\\n/g, '\n');
+
+          const token = await getAccessToken(clientEmail, privateKey);
+          const targetUrl = `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=media&name=${encodeURIComponent(filename)}`;
+
+          console.log(`[v0] Uploading generated image directly to GCS...`);
+          const uploadRes = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'image/png',
+              'Content-Length': buffer.length.toString()
+            },
+            body: buffer
+          });
+
+          if (!uploadRes.ok) {
+             const uploadData = await uploadRes.text();
+             throw new Error(`Failed to upload generated image: ${uploadData}`);
+          }
+
+          const publicUrlPath = `https://storage.googleapis.com/${bucketName}/${encodeURIComponent(filename)}`;
+          console.log(`[v0] Image ${i + 1} saved to GCS:`, publicUrlPath);
           return publicUrlPath;
         }
       }
