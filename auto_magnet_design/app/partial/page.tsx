@@ -2,21 +2,28 @@
 
 import { useRef, useState, useEffect } from "react";
 import PartialToolbar from "../components/PartialToolbar";
+import { useRouter } from "next/navigation";
 
 export default function PartialPage() {
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [currentImage, setCurrentImage] = useState("/sample.png");
+  // ✅ Load starting image
+  const [currentImage, setCurrentImage] = useState<string>(
+    typeof window !== "undefined"
+      ? localStorage.getItem("designImage") || "/sample.png"
+      : "/sample.png"
+  );
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
 
   // -----------------------------
-  // Load base image
+  // Load base image onto canvas
   // -----------------------------
   useEffect(() => {
     if (!canvasRef.current) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -83,7 +90,6 @@ export default function PartialPage() {
     const width = canvas.width;
     const height = canvas.height;
 
-    // BASE (clean image)
     const baseImg = new Image();
     baseImg.crossOrigin = "anonymous";
     baseImg.src = currentImage;
@@ -93,21 +99,15 @@ export default function PartialPage() {
     baseCanvas.width = width;
     baseCanvas.height = height;
     baseCanvas.getContext("2d")!.drawImage(baseImg, 0, 0, width, height);
-
     const base = baseCanvas.toDataURL("image/png");
 
-    // MASK
     const maskCanvas = document.createElement("canvas");
     maskCanvas.width = width;
     maskCanvas.height = height;
     const maskCtx = maskCanvas.getContext("2d")!;
-
     maskCtx.fillStyle = "black";
     maskCtx.fillRect(0, 0, width, height);
-
-    // white strokes from visible canvas
     maskCtx.drawImage(canvas, 0, 0);
-
     const mask = maskCanvas.toDataURL("image/png");
 
     return { base, mask };
@@ -121,17 +121,10 @@ export default function PartialPage() {
 
     try {
       const { base, mask } = await getBaseAndMask();
-
       const res = await fetch("/api/gemini-partial", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          image: base,
-          mask,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, image: base, mask }),
       });
 
       const json = await res.json();
@@ -140,8 +133,8 @@ export default function PartialPage() {
         return;
       }
 
-      // 🔥 Update base image
       setCurrentImage(json.url);
+      localStorage.setItem("designImage", json.url);
     } catch (err) {
       console.error(err);
       alert("Generation failed");
@@ -150,8 +143,36 @@ export default function PartialPage() {
     }
   }
 
+  // -----------------------------
+  // Back to Editor button
+  // -----------------------------
+  const backToEditor = async () => {
+    try {
+      const res = await fetch("/api/saveImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: currentImage }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save image");
+
+      router.push("/editor");
+    } catch (err) {
+      console.error("Could not save image to server:", err);
+      alert("Could not save image to server");
+    }
+  };
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
+      {/* Top-left Back button */}
+      <button
+        onClick={backToEditor}
+        className="absolute top-4 right-4 z-10 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 shadow-lg"
+      >
+        Back to Editor
+      </button>
+
       <PartialToolbar
         isDrawing={isDrawing}
         setIsDrawing={setIsDrawing}
