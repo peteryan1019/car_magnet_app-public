@@ -99,8 +99,6 @@ export default function DesignEditor() {
         Finalize Design
       </button>
 
-<<<<<<< Updated upstream
-=======
       {/* Edit with AI Button */}
       <button
         onClick={editWithAI}
@@ -108,7 +106,6 @@ export default function DesignEditor() {
       >
         Edit with AI
       </button>
->>>>>>> Stashed changes
 
       <iframe
         ref={iframeRef}
