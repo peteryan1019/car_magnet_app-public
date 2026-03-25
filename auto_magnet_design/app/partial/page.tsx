@@ -3,19 +3,20 @@
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+
 export default function PartialPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const router = useRouter(); // ✅ Fix: initialize router
 
   const [currentImage, setCurrentImage] = useState<string>(
     typeof window !== "undefined"
       ? localStorage.getItem("designImage") || "/sample.png"
       : "/sample.png"
   );
+
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false); // for Back to Editor button
 
   // Load image onto canvas
   useEffect(() => {
@@ -166,10 +167,7 @@ export default function PartialPage() {
     }
   }
 
-  // ✅ Back to Editor handler with saving state
   const backToEditor = async () => {
-    if (saving) return;
-    setSaving(true);
     try {
       const res = await fetch("/api/saveImage", {
         method: "POST",
@@ -178,12 +176,11 @@ export default function PartialPage() {
       });
 
       if (!res.ok) throw new Error("Failed to save image");
+
       router.push("/editor");
     } catch (err) {
       console.error("Could not save image to server:", err);
       alert("Could not save image to server");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -192,10 +189,9 @@ export default function PartialPage() {
       {/* Floating Back to Editor Button */}
       <button
         onClick={backToEditor}
-        disabled={saving}
-        className="fixed top-6 right-6 z-50 px-6 py-2 bg-blue-600 backdrop-blur-md text-white rounded-full hover:bg-blue-700 shadow-lg transition disabled:opacity-50"
+        className="fixed top-6 right-6 z-50 px-6 py-2 bg-blue-600 backdrop-blur-md text-white rounded-full hover:bg-blue-700 shadow-lg transition"
       >
-        {saving ? "Saving..." : "Back to Editor"}
+        Back to Editor
       </button>
 
       {/* Canvas */}
