@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.74.0",
     "@google/genai": "^1.41.0",
     "@neondatabase/serverless": "^1.0.2",
+    "@stripe/stripe-js": "^8.9.0",
     "@types/three": "^0.183.1",
     "drizzle-orm": "^0.45.1",
     "jose": "^6.1.3",
