@@ -9,19 +9,18 @@ export default function ResultsPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const effectRan = useRef(false);
+  const effectRan = useRef(false)
 
   useEffect(() => {
-    if (effectRan.current === false) {
+    if (!effectRan.current) {
       const generatedImages = localStorage.getItem("generatedImages")
       const generationError = localStorage.getItem("generationError")
 
       if (generatedImages) {
         try {
           const imageUrls = JSON.parse(generatedImages)
-          console.log("here's the result page's imageUrls: ", imageUrls);
           setImages(imageUrls)
-        } catch (e) {
+        } catch {
           setError("Failed to parse generated images")
         }
       } else if (generationError) {
@@ -32,14 +31,25 @@ export default function ResultsPage() {
     }
 
     return () => {
-      effectRan.current = true;
+      effectRan.current = true
     }
   }, [])
 
+  const editImage = async (imageUrl: string) => {
+    try {
+      const res = await fetch("/api/saveImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      })
 
-  const editImage = (imageUrl: string) => {
-    localStorage.setItem("editorImage", imageUrl || "")
-    router.push("/editor") // change if your route is different
+      if (!res.ok) throw new Error("Failed to save image")
+
+      router.push("/editor")
+    } catch (err) {
+      console.error("Could not save image to server:", err)
+      alert("Could not save image to server")
+    }
   }
 
   const generateAnother = () => {
@@ -119,7 +129,6 @@ export default function ResultsPage() {
               />
 
               <div className="p-4 space-y-3">
-                
                 <button
                   onClick={() => editImage(imageUrl)}
                   className="w-full px-4 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-500 hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]"

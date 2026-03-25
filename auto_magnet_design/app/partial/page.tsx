@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function PartialPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const router = useRouter();
 
   const [currentImage, setCurrentImage] = useState<string>(
     typeof window !== "undefined"
@@ -233,4 +234,4 @@ export default function PartialPage() {
       </div>
     </div>
   );
-}
+} 

@@ -1,41 +1,27 @@
-import { NextResponse } from "next/server"
 import fs from "fs"
 import path from "path"
+import fetch from "node-fetch"
 
-export async function POST(req: Request) {
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" })
+  }
+
+  const { imageUrl } = req.body
+  if (!imageUrl) return res.status(400).json({ message: "No image URL provided" })
+
   try {
-    const { imageUrl } = await req.json()
-    if (!imageUrl) {
-      return NextResponse.json({ message: "No image URL provided" }, { status: 400 })
-    }
+    // Download image
+    const response = await fetch(imageUrl)
+    const buffer = await response.arrayBuffer()
 
-    let buffer: Buffer
+    // Save to public folder
+    const publicPath = path.join(process.cwd(), "public", "sample.png")
+    fs.writeFileSync(publicPath, Buffer.from(buffer))
 
-    if (imageUrl.startsWith("data:image")) {
-      // Handle data URL
-      const base64Data = imageUrl.split(",")[1]
-      buffer = Buffer.from(base64Data, "base64")
-    } else if (imageUrl.startsWith("/")) {
-      // Handle relative URL from public folder
-      const publicPath = path.join(process.cwd(), "public", imageUrl)
-      if (!fs.existsSync(publicPath)) {
-        return NextResponse.json({ message: "File not found: " + imageUrl }, { status: 404 })
-      }
-      buffer = fs.readFileSync(publicPath)
-    } else {
-      // Handle absolute remote URL
-      const fetchResponse = await fetch(imageUrl)
-      if (!fetchResponse.ok) throw new Error("Failed to download image")
-      buffer = Buffer.from(await fetchResponse.arrayBuffer())
-    }
-
-    // Save the image to public folder
-    const savePath = path.join(process.cwd(), "public", "simple.png")
-    fs.writeFileSync(savePath, buffer)
-
-    return NextResponse.json({ message: "Saved successfully", url: "/simple.png" })
+    res.status(200).json({ message: "Saved successfully" })
   } catch (err) {
     console.error(err)
-    return NextResponse.json({ message: "Failed to save image" }, { status: 500 })
+    res.status(500).json({ message: "Failed to save image" })
   }
 }

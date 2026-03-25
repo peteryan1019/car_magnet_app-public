@@ -36,10 +36,13 @@ export default function LoadingPage() {
         const twoDoorValue = localStorage.getItem("two_door")
         const two_door = twoDoorValue === null ? true : twoDoorValue === "true"
 
+        // Get optional logo URL saved during preference setup
+        const logoUrl = localStorage.getItem("logo_url")
+
         const res = await fetch("/api/gemini", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userText: bannerText, two_door }),
+          body: JSON.stringify({ userText: bannerText, two_door, logoUrl }),
         })
 
         if (!res.ok) {
@@ -56,8 +59,16 @@ export default function LoadingPage() {
 
         const data = await res.json()
 
-        // API call succeeded, use only generated images (no default)
-        localStorage.setItem("generatedImages", JSON.stringify(data.urls || []))
+        localStorage.setItem("generatedImages", JSON.stringify(data.urls))
+        
+        // Save to My Designs database
+        try {
+            await saveDesignsAction(data.urls);
+        } catch (saveError) {
+            console.error("Failed to save designs to database", saveError);
+        }
+
+        // const urls = JSON.parse(data.urls)
         console.log("here's the loading page's imageUrls: ", data.urls);
         router.push("/results")
       } catch (error) {
