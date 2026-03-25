@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import ExportButton from "../components/ExportButton";
 import Link from "next/link";
+import DesignActions from "../components/DesignActions"; // <- our new Client Component
 
 export default async function MyDesignsPage() {
   const session = await getSession();
@@ -35,22 +36,29 @@ export default async function MyDesignsPage() {
         {userDesigns.length === 0 ? (
           <div className="text-center py-20">
             <h2 className="text-xl mb-4">You have no designs yet.</h2>
-            <p className="text-white/70">Go to the Design page to generate some custom banners!</p>
+            <p className="text-white/70">
+              Go to the Design page to generate some custom banners!
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userDesigns.map((design) => (
-              <div key={design.id} className="bg-slate-800 rounded-xl overflow-hidden shadow-2xl">
+              <div
+                key={design.id}
+                className="bg-slate-800 rounded-xl overflow-hidden shadow-2xl"
+              >
                 <img
                   src={design.imageUrl || "/frame1.jpg"}
-                  alt={`Saved design from ${new Date(design.dateCreated).toLocaleDateString()}`}
+                  alt={`Saved design from ${new Date(
+                    design.dateCreated
+                  ).toLocaleDateString()}`}
                   className="w-full h-auto"
                 />
                 <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center">
-                    <span className="text-sm text-slate-400 font-medium">
-                        {new Date(design.dateCreated).toLocaleDateString()}
-                    </span>
-                    <ExportButton imgsrc={design.imageUrl} />
+                  <span className="text-sm text-slate-400 font-medium">
+                    {new Date(design.dateCreated).toLocaleDateString()}
+                  </span>
+                  <DesignActions imageUrl={design.imageUrl} />
                 </div>
               </div>
             ))}

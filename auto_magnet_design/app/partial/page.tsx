@@ -1,19 +1,36 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+<<<<<<< Updated upstream
 import PartialToolbar from "../components/PartialToolbar";
+=======
+import { useRouter } from "next/navigation";
+>>>>>>> Stashed changes
 
 export default function PartialPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+<<<<<<< Updated upstream
   const [currentImage, setCurrentImage] = useState("/sample.png");
+=======
+  const [currentImage, setCurrentImage] = useState<string>(
+    typeof window !== "undefined"
+      ? localStorage.getItem("designImage") || "/sample.png"
+      : "/sample.png"
+  );
+
+>>>>>>> Stashed changes
   const [isDrawing, setIsDrawing] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
 
+<<<<<<< Updated upstream
   // -----------------------------
   // Load base image
   // -----------------------------
+=======
+  // Load image onto canvas
+>>>>>>> Stashed changes
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -33,9 +50,7 @@ export default function PartialPage() {
     };
   }, [currentImage]);
 
-  // -----------------------------
-  // Drawing mask
-  // -----------------------------
+  // Drawing mask logic
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -48,15 +63,27 @@ export default function PartialPage() {
     const start = (e: MouseEvent) => {
       if (!isDrawing) return;
       drawing = true;
+
+      const rect = canvas.getBoundingClientRect();
+      const offsetX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+      const offsetY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
       ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
+      ctx.moveTo(offsetX, offsetY);
     };
 
     const draw = (e: MouseEvent) => {
       if (!drawing || !isDrawing) return;
-      ctx.lineTo(e.offsetX, e.offsetY);
-      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+
+      const rect = canvas.getBoundingClientRect();
+      const offsetX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+      const offsetY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+      ctx.lineTo(offsetX, offsetY);
+      ctx.strokeStyle = "rgba(255,255,255,1)";
       ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
       ctx.stroke();
     };
 
@@ -67,17 +94,17 @@ export default function PartialPage() {
     canvas.addEventListener("mousedown", start);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stop);
+    canvas.addEventListener("mouseleave", stop);
 
     return () => {
       canvas.removeEventListener("mousedown", start);
       canvas.removeEventListener("mousemove", draw);
       canvas.removeEventListener("mouseup", stop);
+      canvas.removeEventListener("mouseleave", stop);
     };
   }, [isDrawing]);
 
-  // -----------------------------
-  // Extract base + mask
-  // -----------------------------
+  // Extract base and mask
   async function getBaseAndMask() {
     const canvas = canvasRef.current!;
     const width = canvas.width;
@@ -105,7 +132,11 @@ export default function PartialPage() {
     maskCtx.fillStyle = "black";
     maskCtx.fillRect(0, 0, width, height);
 
+<<<<<<< Updated upstream
     // white strokes from visible canvas
+=======
+    maskCtx.globalCompositeOperation = "source-over";
+>>>>>>> Stashed changes
     maskCtx.drawImage(canvas, 0, 0);
 
     const mask = maskCanvas.toDataURL("image/png");
@@ -113,10 +144,12 @@ export default function PartialPage() {
     return { base, mask };
   }
 
-  // -----------------------------
-  // Generate
-  // -----------------------------
   async function handleGenerate() {
+    if (!prompt) {
+      alert("Please enter a prompt!");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -150,6 +183,7 @@ export default function PartialPage() {
     }
   }
 
+<<<<<<< Updated upstream
   return (
     <div className="flex h-full">
       <PartialToolbar
@@ -161,6 +195,72 @@ export default function PartialPage() {
         loading={loading}
       />
       <canvas ref={canvasRef} className="border flex-1" />
+=======
+  const backToEditor = async () => {
+    try {
+      const res = await fetch("/api/saveImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: currentImage }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save image");
+
+      router.push("/editor");
+    } catch (err) {
+      console.error("Could not save image to server:", err);
+      alert("Could not save image to server");
+    }
+  };
+
+  return (
+    <div className="flex h-full relative bg-gray-900 text-white">
+      {/* Floating Back to Editor Button */}
+      <button
+        onClick={backToEditor}
+        className="fixed top-6 right-6 z-50 px-6 py-2 bg-blue-600 backdrop-blur-md text-white rounded-full hover:bg-blue-700 shadow-lg transition"
+      >
+        Back to Editor
+      </button>
+
+      {/* Canvas */}
+      <canvas ref={canvasRef} className="flex-1 border mx-auto" />
+
+      {/* Floating Bottom Input Bar */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4 z-50">
+        <div className="flex items-center gap-3 bg-black/50 backdrop-blur-md border border-gray-700 rounded-full shadow-lg px-4 py-3">
+
+          {/* Draw Mask Button */}
+          <button
+            onClick={() => setIsDrawing(!isDrawing)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+              isDrawing
+                ? "bg-blue-600 text-white"
+                : "bg-blue-500/30 text-white hover:bg-blue-600"
+            }`}
+          >
+            {isDrawing ? "Drawing..." : "Draw Mask"}
+          </button>
+
+          {/* Input */}
+          <input
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe what to generate..."
+            className="flex-1 outline-none bg-transparent text-white placeholder-gray-400"
+          />
+
+          {/* Generate Button */}
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-500 disabled:opacity-50 transition"
+          >
+            {loading ? "Generating..." : "Generate"}
+          </button>
+        </div>
+      </div>
+>>>>>>> Stashed changes
     </div>
   );
 }
