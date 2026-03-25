@@ -1,18 +1,12 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-<<<<<<< Updated upstream
-import PartialToolbar from "../components/PartialToolbar";
-=======
 import { useRouter } from "next/navigation";
 >>>>>>> Stashed changes
 
 export default function PartialPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-<<<<<<< Updated upstream
-  const [currentImage, setCurrentImage] = useState("/sample.png");
-=======
   const [currentImage, setCurrentImage] = useState<string>(
     typeof window !== "undefined"
       ? localStorage.getItem("designImage") || "/sample.png"
@@ -24,13 +18,7 @@ export default function PartialPage() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
 
-<<<<<<< Updated upstream
-  // -----------------------------
-  // Load base image
-  // -----------------------------
-=======
   // Load image onto canvas
->>>>>>> Stashed changes
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -132,11 +120,7 @@ export default function PartialPage() {
     maskCtx.fillStyle = "black";
     maskCtx.fillRect(0, 0, width, height);
 
-<<<<<<< Updated upstream
-    // white strokes from visible canvas
-=======
     maskCtx.globalCompositeOperation = "source-over";
->>>>>>> Stashed changes
     maskCtx.drawImage(canvas, 0, 0);
 
     const mask = maskCanvas.toDataURL("image/png");
@@ -183,19 +167,6 @@ export default function PartialPage() {
     }
   }
 
-<<<<<<< Updated upstream
-  return (
-    <div className="flex h-full">
-      <PartialToolbar
-        isDrawing={isDrawing}
-        setIsDrawing={setIsDrawing}
-        prompt={prompt}
-        setPrompt={setPrompt}
-        onGenerate={handleGenerate}
-        loading={loading}
-      />
-      <canvas ref={canvasRef} className="border flex-1" />
-=======
   const backToEditor = async () => {
     try {
       const res = await fetch("/api/saveImage", {
@@ -260,7 +231,6 @@ export default function PartialPage() {
           </button>
         </div>
       </div>
->>>>>>> Stashed changes
     </div>
   );
 }
