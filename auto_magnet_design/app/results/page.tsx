@@ -9,33 +9,48 @@ export default function ResultsPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const effectRan = useRef(false);
+  const effectRan = useRef(false)
 
   useEffect(() => {
+    if (!effectRan.current) {
+      const generatedImages = localStorage.getItem("generatedImages")
+      const generationError = localStorage.getItem("generationError")
 
-    if(effectRan.current===false){
-        const generatedImages = localStorage.getItem("generatedImages")
-        const generationError = localStorage.getItem("generationError")
-
-        if (generatedImages) {
+      if (generatedImages) {
         try {
-            const imageUrls = JSON.parse(generatedImages)
-            console.log("here's the result page's imageUrls: ", imageUrls);
-            setImages(imageUrls)
-        } catch (e) {
-            setError("Failed to parse generated images")
+          const imageUrls = JSON.parse(generatedImages)
+          setImages(imageUrls)
+        } catch {
+          setError("Failed to parse generated images")
         }
-        } else if (generationError) {
+      } else if (generationError) {
         setError(generationError)
-        }
+      }
 
-        setLoading(false)
-        }
-        return ()=>{
-            effectRan.current = true;
-        }
-    
+      setLoading(false)
+    }
+
+    return () => {
+      effectRan.current = true
+    }
   }, [])
+
+  const editImage = async (imageUrl: string) => {
+    try {
+      const res = await fetch("/api/saveImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      })
+
+      if (!res.ok) throw new Error("Failed to save image")
+
+      router.push("/editor")
+    } catch (err) {
+      console.error("Could not save image to server:", err)
+      alert("Could not save image to server")
+    }
+  }
 
   const generateAnother = () => {
     localStorage.removeItem("generatedImages")
@@ -93,7 +108,9 @@ export default function ResultsPage() {
     <main className="min-h-dvh p-6 bg-slate-900 text-white font-sans">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-2xl mb-3">Your Generated Banners ({images.length})</h1>
+          <h1 className="text-2xl mb-3">
+            Your Generated Banners ({images.length})
+          </h1>
           <button
             onClick={generateAnother}
             className="text-base px-4 py-3 rounded-xl border border-blue-500 bg-gray-800 hover:bg-gray-700 transition-colors"
@@ -110,7 +127,18 @@ export default function ResultsPage() {
                 alt={`Generated banner ${index + 1}`}
                 className="w-full h-auto"
               />
-              <ExportButton imgsrc={imageUrl}></ExportButton>
+
+              <div className="p-4 space-y-3">
+                <button
+                  onClick={() => editImage(imageUrl)}
+                  className="w-full px-4 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-500 hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                >
+                  Edit in Editor
+                </button>
+
+                {/* Existing export */}
+                <ExportButton imgsrc={imageUrl} />
+              </div>
             </div>
           ))}
         </div>
