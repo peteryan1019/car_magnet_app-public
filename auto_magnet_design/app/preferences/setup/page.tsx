@@ -16,6 +16,7 @@ export default function Page() {
 
   const [carType, setCarType] = useState<string>("");
   const [isTwoDoor, setIsTwoDoor] = useState<"true" | "false" | null>(null);
+  const [leftSide, setLeftSide] = useState(false);
   const [dimInches, setDimInches] = useState<Dimensions | null>({width: 0, height: 0});
   const [dimPx, setDimPx] = useState<Dimensions | null>(null);
   const [doorCutPx, setDoorCutPx] = useState<number>(0);
@@ -89,6 +90,7 @@ export default function Page() {
 
     localStorage.setItem("car_type", carType);
     localStorage.setItem("two_door", isTwoDoor);
+    localStorage.setItem("left_side", leftSide ? "true" : "false");
     localStorage.setItem("dimensions_inches", JSON.stringify(dimInches));
     localStorage.setItem("dimensions_px", JSON.stringify(dimPx));
 
@@ -133,11 +135,12 @@ export default function Page() {
     <div className="flex min-h-[calc(100vh-73px)] bg-slate-900">
 
       {/* Model Preview — 3/4 width */}
-      <div className="flex-[3] flex items-center justify-center p-6">
+      <div className="flex-[3] flex flex-col justify-center p-6">
         <ModelPreview
-          imgsrc="https://miro.medium.com/v2/resize:fit:1400/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg"
+          imgsrc="/sample.png"
           carType={carType || "minivan"}
           isTwoDoor={isTwoDoor == "true"}
+          leftSide={leftSide}
         />
       </div>
 
@@ -245,6 +248,28 @@ export default function Page() {
               onClick={() => setIsTwoDoor("false")}
             >
               No
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 items-center w-full">
+          <span className="font-semibold text-sm">What side?</span>
+          <div className="flex gap-3">
+            <button
+              className={`px-4 py-2 rounded text-sm ${
+                leftSide ? "bg-blue-600 text-white" : "bg-gray-800 hover:bg-blue-700"
+              }`}
+              onClick={() => setLeftSide(true)}
+            >
+              Left
+            </button>
+            <button
+              className={`px-4 py-2 rounded text-sm ${
+                !leftSide ? "bg-blue-600 text-white" : "bg-gray-800 hover:bg-blue-700"
+              }`}
+              onClick={() => setLeftSide(false)}
+            >
+              Right
             </button>
           </div>
         </div>

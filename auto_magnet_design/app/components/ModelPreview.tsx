@@ -12,11 +12,12 @@ interface ModelPreviewProps {
     leftSide?: boolean
 }
 
-const carTypes = ["small", "medium", "minivan", "suv", "large_van", "truck"];
+const carTypes = ["small", "medium", "minivan", "suv", "truck"];
 
 export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftSide = false }: ModelPreviewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const scene = useRef(new THREE.Scene());
+    const cameraRef = useRef<THREE.PerspectiveCamera>(null);
     const carModels = useRef(new Map<string, THREE.Group>());
     const activeModel = useRef<null | THREE.Group>(null);
     const texLoader = useRef(new THREE.TextureLoader());
@@ -32,13 +33,14 @@ export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftS
         const height = container.clientHeight;
 
         const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        cameraRef.current = camera;
 
-        const rectLight = new THREE.RectAreaLight(0xffffff, 20, 30, 10);
+        const rectLight = new THREE.RectAreaLight(0xffffff, 15, 10, 10);
         rectLight.position.set(5, 5, 5);
         rectLight.lookAt(0, 0, 0);
         scene.current.add(rectLight);
 
-        const rectLight2 = new THREE.RectAreaLight(0xffffff, 20, 30, 10);
+        const rectLight2 = new THREE.RectAreaLight(0xffffff, 15, 10, 10);
         rectLight2.position.set(-5, 5, -5);
         rectLight2.lookAt(0, 0, 0);
         scene.current.add(rectLight2);
@@ -49,10 +51,11 @@ export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftS
         container.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target = new THREE.Vector3(0,0.6,0);
         controls.enablePan = false;
         controls.enableDamping = true;
 
-        camera.position.set(leftSide ? 3 : -3, 2, 3);
+        camera.position.set(leftSide ? 2.4 : -2.4, 1.5, 2.4);
 
         renderer.setAnimationLoop(() => {
             controls.update();
@@ -90,6 +93,7 @@ export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftS
     useEffect(() => {
         let cancelled = false;
 
+        cameraRef.current?.position.set(leftSide ? 2.4 : -2.4, 1.5, 2.4);
         async function swapModel() {
             const car = carTypes.includes(carType) ? carType : "medium";
 
@@ -136,5 +140,8 @@ export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftS
         return () => { cancelled = true; };
     }, [carType, isTwoDoor, leftSide]);
 
-    return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+    return <>
+    <div ref={containerRef} style={{ width: "100%", height: "100%" }}></div>
+    <p className="text-slate-500 text-xs">This work is based on "Lowpoly Generic SUV" (https://sketchfab.com/3d-models/lowpoly-generic-suv-edc994ad28ed438cb365c0e0389ac177) by mk2design (https://sketchfab.com/mk2design) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)</p>
+    </>
 }
