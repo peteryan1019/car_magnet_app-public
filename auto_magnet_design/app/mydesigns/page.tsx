@@ -1,9 +1,11 @@
+// page.tsx
 import { db } from "@/db";
 import { designs } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import ExportButton from "../components/ExportButton";
+import DeleteDesignButton from "../components/deleteDesignButton"; // <-- Import the new button
 import Link from "next/link";
 
 export default async function MyDesignsPage() {
@@ -50,7 +52,11 @@ export default async function MyDesignsPage() {
                     <span className="text-sm text-slate-400 font-medium">
                         {new Date(design.dateCreated).toLocaleDateString()}
                     </span>
-                    <ExportButton imgsrc={design.imageUrl} />
+                    {/* Wrap buttons in a flex container */}
+                    <div className="flex items-center gap-2">
+                      <ExportButton imgsrc={design.imageUrl} />
+                      <DeleteDesignButton id={design.id} />
+                    </div>
                 </div>
               </div>
             ))}

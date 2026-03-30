@@ -44,3 +44,5 @@ next-env.d.ts
 
 # generated images
 /public/gemini_generated/
+
+/drizzle
