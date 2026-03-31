@@ -72,7 +72,7 @@ export default function MyDesignsPage() {
                   src={design.imageUrl || "/frame1.jpg"}
                   alt={`Saved design from ${new Date(design.dateCreated).toLocaleDateString()}`}
                   className="w-full h-auto cursor-pointer"
-                  onClick={() => setDisplayImg(design.imageUrl)}
+                  onClick={() => {setDisplayImg(design.imageUrl); setIsTwoDoor(design.two_doors)}}
                 />
                 <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center">
                     <span className="text-sm text-slate-400 font-medium">
