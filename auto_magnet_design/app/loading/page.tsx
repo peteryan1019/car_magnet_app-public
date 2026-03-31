@@ -6,91 +6,104 @@ import { saveDesignsAction } from "@/app/actions/design-actions"
 
 export default function LoadingPage() {
   const router = useRouter()
-    const effectRan = useRef(false);
+  const effectRan = useRef(false)
+
   useEffect(() => {
-    if (effectRan.current === false){
- const generateImage = async () => {
-      try {
-        const bannerText = localStorage.getItem("bannerText")
-        if (!bannerText) {
-          router.push("/")
-          return
-        }
-
-        // Check if API key exists before making request
-        const hasApiKey = process.env.NEXT_PUBLIC_HAS_GEMINI_KEY === "true"
-        
-        if (!hasApiKey) {
-          // No API key configured, use default images only
-          const defaultImages = [
-            "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
-            "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
-          ]
-          localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
-          console.log("No API key configured, using default images");
-          router.push("/results")
-          return
-        }
-
-        // Get two_door from localStorage, default to true (two-door)
-        const twoDoorValue = localStorage.getItem("two_door")
-        const two_door = twoDoorValue === null ? true : twoDoorValue === "true"
-
-        // Get optional logo URL saved during preference setup
-        const logoUrl = localStorage.getItem("logo_url")
-
-        const res = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userText: bannerText, two_door, logoUrl }),
-        })
-
-        if (!res.ok) {
-          // API call failed, use default images only
-          const defaultImages = [
-            "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
-            "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
-          ]
-          localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
-          console.log("API call failed, using default images");
-          router.push("/results")
-          return
-        }
-
-        const data = await res.json()
-
-        localStorage.setItem("generatedImages", JSON.stringify(data.urls))
-        
-        // Save to My Designs database
+    if (effectRan.current === false) {
+      const generateImage = async () => {
         try {
-            await saveDesignsAction(data.urls);
-        } catch (saveError) {
-            console.error("Failed to save designs to database", saveError);
-        }
+          // Retrieve the new specific fields from localStorage
+          const primaryText = localStorage.getItem("primaryText")
+          const secondaryText = localStorage.getItem("secondaryText") || ""
+          const phoneNumber = localStorage.getItem("phoneNumber") || ""
+          const website = localStorage.getItem("website") || ""
 
-        // const urls = JSON.parse(data.urls)
-        console.log("here's the loading page's imageUrls: ", data.urls);
-        router.push("/results")
-      } catch (error) {
-        console.error("Error generating image:", error)
-        // If API call fails, use default images only
-        const defaultImages = [
-          "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
-          "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
-        ]
-        localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
-        console.log("Exception caught, using default images");
-        router.push("/results")
+          // Primary text is required, redirect to home if missing
+          if (!primaryText) {
+            router.push("/")
+            return
+          }
+
+          // Check if API key exists before making request
+          const hasApiKey = process.env.NEXT_PUBLIC_HAS_GEMINI_KEY === "true"
+
+          if (!hasApiKey) {
+            // No API key configured, use default images only
+            const defaultImages =[
+              "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
+              "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
+            ]
+            localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
+            console.log("No API key configured, using default images")
+            router.push("/results")
+            return
+          }
+
+          // Get two_door from localStorage, default to true (two-door)
+          const twoDoorValue = localStorage.getItem("two_door")
+          const two_door = twoDoorValue === null ? true : twoDoorValue === "true"
+
+          // Get optional logo URL saved during preference setup
+          const logoUrl = localStorage.getItem("logo_url")
+
+          // Pass the destructured properties matching what the updated API expects
+          const res = await fetch("/api/gemini", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              primaryText,
+              secondaryText,
+              phoneNumber,
+              website,
+              two_door,
+              logoUrl
+            }),
+          })
+
+          if (!res.ok) {
+            // API call failed, use default images only
+            const defaultImages =[
+              "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
+              "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
+            ]
+            localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
+            console.log("API call failed, using default images")
+            router.push("/results")
+            return
+          }
+
+          const data = await res.json()
+
+          localStorage.setItem("generatedImages", JSON.stringify(data.urls))
+
+          // Save to My Designs database
+          try {
+            await saveDesignsAction(data.urls, two_door)
+          } catch (saveError) {
+            console.error("Failed to save designs to database", saveError)
+          }
+
+          console.log("here's the loading page's imageUrls: ", data.urls)
+          router.push("/results")
+        } catch (error) {
+          console.error("Error generating image:", error)
+          // If API call fails, use default images only
+          const defaultImages =[
+            "/gemini_generated/banner-1770928479330-1-934cb9f6-813a-4379-bb21-66b3eb09f834.png",
+            "/gemini_generated/banner-1771009678849-1-34b82b33-3950-4ca0-83c8-717fdb47a2aa.png"
+          ]
+          localStorage.setItem("generatedImages", JSON.stringify(defaultImages))
+          console.log("Exception caught, using default images")
+          router.push("/results")
+        }
+      }
+
+      generateImage()
+
+      return () => {
+        effectRan.current = true
       }
     }
-
-    generateImage()
-
-    return ()=>{
-            effectRan.current = true;
-        }
-    }
-   
   }, [router])
 
   return (

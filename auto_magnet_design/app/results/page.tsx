@@ -3,29 +3,44 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import ExportButton from "../components/ExportButton"
+import ModelPreview from "../components/ModelPreview"
 
 export default function ResultsPage() {
   const [images, setImages] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [carType, setCarType] = useState("medium");
+  const [isTwoDoor, setIsTwoDoor] = useState("false");
+  const [leftSide, setLeftSide] = useState(false);
+  const [displayImg, setDisplayImg] = useState("/sample.png")
+
   const router = useRouter()
   const effectRan = useRef(false)
 
   useEffect(() => {
     if (!effectRan.current) {
-      const generatedImages = localStorage.getItem("generatedImages")
-      const generationError = localStorage.getItem("generationError")
+      const generatedImages = localStorage.getItem("generatedImages");
+      const generationError = localStorage.getItem("generationError");
 
       if (generatedImages) {
         try {
           const imageUrls = JSON.parse(generatedImages)
           setImages(imageUrls)
+          if (imageUrls.length != 0) setDisplayImg(imageUrls[0]);
         } catch {
           setError("Failed to parse generated images")
         }
       } else if (generationError) {
         setError(generationError)
       }
+
+      let t = null;
+      t = localStorage.getItem("car_type");
+      if (t) {setCarType(t);}
+      t = localStorage.getItem("two_door");
+      if (t === "true" || t === "false") {setIsTwoDoor(t);}
+      t = localStorage.getItem("left_side");
+      if (t === "true") {setLeftSide(true);}
 
       setLoading(false)
     }
@@ -126,6 +141,7 @@ export default function ResultsPage() {
                 src={imageUrl || "/frame1.jpg"}
                 alt={`Generated banner ${index + 1}`}
                 className="w-full h-auto"
+                onClick={() => setDisplayImg(imageUrl)}
               />
 
               <div className="p-4 space-y-3">
@@ -143,6 +159,18 @@ export default function ResultsPage() {
           ))}
         </div>
       </div>
+
+       <div className="flex min-h-[calc(50vh-73px)] bg-slate-900">
+          <div className="flex-[3] flex flex-col justify-center p-6">
+              <ModelPreview
+                  imgsrc={displayImg}
+                  carType={carType}
+                  isTwoDoor={isTwoDoor == "true"}
+                  leftSide={leftSide}
+              />
+            </div>
+        </div>
+
     </main>
   )
 }

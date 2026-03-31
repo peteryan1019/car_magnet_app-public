@@ -52,20 +52,19 @@ async function getAccessToken(clientEmail: string, privateKey: string) {
   return data.access_token;
 }
 
-async function enhancePrompt(user_input: string, aspectRatio: string): Promise<string> {
+async function enhancePrompt(bannerDetails: string, aspectRatio: string): Promise<string> {
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-20250514", 
       max_tokens: 1024,
-      messages: [
+      messages:[
         {
           role: "user",
-          content: `You are an amazing design instructions writer. You will take the prompt "add the text "${user_input}" inside the frame, which should be placed in the center of the frame. Feel free to change the background color and the frame color. Make sure that the text color, font, and size fit aesthetically together with the background and frame colors while ensuring high contrast. Optionally, decide on which text to emphasize with a different color, size, or weight. Use aspect ratio ${aspectRatio}." and output design instructions, adhering to each idea the user gave (do not leave out any ideas given by the user), while turning it into precise design instructions. When you recieve the prompt, just go, and output your design instructions. Do not acknowlege the command, do not acknowledge the user, do not add additional words, just go and output what you have.`,
+          content: `You are an amazing design instructions writer. You will take the following banner details:\n\n${bannerDetails}\n\nPlace the Primary Text in the center of the frame, and appropriately arrange the secondary text, phone number, and website around it. Feel free to change the background color and the frame color. Make sure that the text color, font, and size fit aesthetically together with the background and frame colors while ensuring high contrast. Optionally, decide on which text to emphasize with a different color, size, or weight. Use aspect ratio ${aspectRatio}. Output design instructions, adhering to each idea the user gave (do not leave out any ideas given by the user), while turning it into precise design instructions. When you recieve the prompt, just go, and output your design instructions. Do not acknowlege the command, do not acknowledge the user, do not add additional words, just go and output what you have.`,
         },
       ],
     });
 
-    // Check if the first content block is a text block
     const firstBlock = response.content[0];
     if (firstBlock.type === "text") {
       const enhanced_prompt = firstBlock.text;
@@ -84,7 +83,15 @@ export async function POST(req: NextRequest) {
   try {
     const overallStartTime = Date.now();
     
-    const { userText, two_door, logoUrl } = await req.json();
+    const { 
+      primaryText, 
+      secondaryText, 
+      phoneNumber, 
+      website, 
+      two_door, 
+      logoUrl 
+    } = await req.json();
+
     const anthropic = new Anthropic();
 
     // Fetch the logo if provided, to convert it to base64 inline data for Gemini
@@ -112,38 +119,48 @@ export async function POST(req: NextRequest) {
     const aspectRatio = two_door === true ? "3:1" : "16:9";
     console.log(`[v0] Using aspect ratio: ${aspectRatio} (two_door: ${two_door})`);
 
+    // Combine all the text inputs cleanly, ignoring empty optional fields
+    const bannerDetails =[
+      `Primary Text: "${primaryText}"`,
+      secondaryText ? `Secondary Text: "${secondaryText}"` : null,
+      phoneNumber ? `Phone Number: "${phoneNumber}"` : null,
+      website ? `Website: "${website}"` : null,
+    ].filter(Boolean).join("\n");
+
     console.log(`[v0] Enhancing prompt with Claude...`);
     const promptStartTime = Date.now();
-    // const enhanced_prompt = await enhancePrompt(userText, aspectRatio);
-    let enhanced_prompt = userText; // will replace the prompt enhancement logic with a better one after implementing the blob logic for nano banana api calls.
+    
+    // Construct the baseline prompt
+    let enhanced_prompt = `Use the blank canvas for reference size ratio only. Generate a banner design containing the following details:\n${bannerDetails}`; 
+    
     if (logoInlineData) {
       // Append specific instructions for the logo styling mapping
-      enhanced_prompt += `\nGenerate a banner with text "${userText}" that has the style of the provided logo and the aspect ratio of the blank canvas.`;
+      enhanced_prompt += `\nThe generated design should have the style of the uploaded logo in image 2.`;
     }
+    
     const promptEndTime = Date.now();
     const promptTime = ((promptEndTime - promptStartTime) / 1000).toFixed(2);
-    console.log(`[v0] ✓ Prompt enhanced in ${promptTime}s`);
+    console.log(`[v0] ✓ Prompt prepared in ${promptTime}s`);
 
-    const apiConfigs = [
-        // {
-        //   imagePath: "frame.jpg",
-        //   prompt: enhanced_prompt,
-        // },
+    const apiConfigs =[
       {
         imagePath: "blank-canvas.png",
         prompt: enhanced_prompt,
       },
-        // {
-        //   imagePath: "frame1.jpg",
-        //   prompt: enhanced_prompt,
-        // },
+      {
+        imagePath: "blank-canvas.png",
+        prompt: enhanced_prompt,
+      },
+      {
+        imagePath: "blank-canvas.png",
+        prompt: enhanced_prompt,
+      }
     ];
 
     console.log(`[v0] Starting image generation for ${apiConfigs.length} image(s)...`);
     const startTime = Date.now();
 
     const generationPromises = apiConfigs.map(async (config, i) => {
-      // Load the image from the local file system
       const abs = path.join(process.cwd(), "public", config.imagePath);
       const imagePath = `${abs}`;
       console.log(`[v0] Processing image ${i + 1}: ${imagePath}`);
@@ -151,22 +168,24 @@ export async function POST(req: NextRequest) {
       const imageData = await fsp.readFile(imagePath);
       const base64Image = imageData.toString("base64");
 
-      // Prepare the content parts
-      const contents: any[] = [
-        { text: config.prompt },
-      ];
+      // Build contents array strictly in order
+      const contents: any[] =[];
 
-      // Add logo inline data if present (before the aspect-ratio reference image)
+      // 1. First add the prompt text
+      contents.push({ text: config.prompt });
+
+      // 2. Add logo as the first image (if present)
       if (logoInlineData) {
         contents.push({
           inlineData: logoInlineData,
         });
       }
 
-      // Add the aspect-ratio reference image as the very last image
+      // 3. Add the blank canvas reference image ABSOLUTELY LAST
+      const isPng = config.imagePath.toLowerCase().endsWith('.png');
       contents.push({
         inlineData: {
-          mimeType: "image/jpeg",
+          mimeType: isPng ? "image/png" : "image/jpeg", // Fix to prevent Gemini from misinterpreting a PNG as a JPEG
           data: base64Image,
         },
       });
@@ -175,10 +194,10 @@ export async function POST(req: NextRequest) {
 
       // Generate content with Gemini
       const response = await ai.models.generateContent({
-        model: "gemini-3-pro-image-preview",
+        model: "gemini-3-pro-image-preview", // Make sure this model ID is valid in the latest SDK
         contents: contents,
         config: {
-          responseModalities: ["TEXT", "IMAGE"],
+          responseModalities:["TEXT", "IMAGE"],
           imageConfig: {
             imageSize: resolution,
           },
@@ -231,7 +250,6 @@ export async function POST(req: NextRequest) {
     });
 
     const results = await Promise.all(generationPromises);
-    // const generatedUrls = results.filter((url): url is string => url !== null)
 
     const endTime = Date.now();
     const generationTime = ((endTime - startTime) / 1000).toFixed(2);
