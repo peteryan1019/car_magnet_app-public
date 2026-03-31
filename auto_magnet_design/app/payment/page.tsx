@@ -1,9 +1,29 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 
 export default function PaymentPage() {
-  const stripeLink = "https://buy.stripe.com/test_3cI00jdy40Vic5v1fV9fW00";
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url; // Redirect user to Stripe Checkout
+      } else {
+        alert("Failed to start checkout.");
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Payment failed, please try again.");
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen grid place-items-center p-6 bg-slate-900 text-white font-sans">
@@ -19,25 +39,24 @@ export default function PaymentPage() {
           </p>
 
           {/* Payment Button */}
-          <a
-            href={stripeLink}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={handleCheckout}
+            disabled={loading}
             className="inline-block w-full px-8 py-4 text-lg font-bold text-white bg-blue-600 rounded-full hover:bg-blue-500 hover:scale-105 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)]"
           >
-            Pay $15
-          </a>
+            {loading ? "Redirecting..." : "Pay $15"}
+          </button>
         </div>
 
         <div className="px-8 py-4 border-t border-slate-700 text-center">
           <p className="text-sm text-slate-400">
             Already completed your payment?{" "}
-            <Link
+            <a
               href="/payment/success"
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               Confirm here
-            </Link>
+            </a>
           </p>
         </div>
 
