@@ -137,7 +137,7 @@ export default function Page() {
       {/* Model Preview — 3/4 width */}
       <div className="flex-[3] flex flex-col justify-center p-6">
         <ModelPreview
-          imgsrc="/sample.png"
+          imgsrc="/frame.jpg"
           carType={carType || "minivan"}
           isTwoDoor={isTwoDoor == "true"}
           leftSide={leftSide}
@@ -172,9 +172,6 @@ export default function Page() {
                 case "minivan":
                   suggested = { width: 52, height: 46 };
                   break;
-                case "large_van":
-                  suggested = { width: 56, height: 50 };
-                  break;
                 case "truck":
                   suggested = { width: 48, height: 40 };
                   break;
@@ -194,7 +191,6 @@ export default function Page() {
             <option value="medium">Medium Sedan/Hatchback</option>
             <option value="suv">SUV</option>
             <option value="minivan">Minivan</option>
-            <option value="large_van">Large Van</option>
             <option value="truck">Pickup Truck</option>
             <option value="custom">Custom Dimensions</option>
           </select>

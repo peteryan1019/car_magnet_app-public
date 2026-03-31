@@ -9,6 +9,7 @@ import DeleteDesignButton from "../components/deleteDesignButton";
 import Link from "next/link";
 import ModelPreview from "../components/ModelPreview";
 import { useEffect, useState } from "react";
+import Modal from '@mui/material/Modal'; 
 
 export default function MyDesignsPage() {
   const [userDesigns, setUserDesigns] = useState<any[]>([]);
@@ -16,6 +17,7 @@ export default function MyDesignsPage() {
   const [isTwoDoor, setIsTwoDoor] = useState("false");
   const [leftSide, setLeftSide] = useState(false);
   const [displayImg, setDisplayImg] = useState("/sample.png")
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setUpPage();
@@ -32,6 +34,16 @@ export default function MyDesignsPage() {
     if (t === "true" || t === "false") {setIsTwoDoor(t);}
     t = localStorage.getItem("left_side");
     if (t === "true") {setLeftSide(true);}
+  }
+
+  function handleOpen(design: any) {
+    setDisplayImg(design.imageUrl);
+    setIsTwoDoor(design.two_doors);
+    setOpen(true);
+  }
+
+  function handleClose() {
+    setOpen(false);
   }
 
   // ADDED: Function to instantly remove the deleted design from the React State
@@ -72,7 +84,7 @@ export default function MyDesignsPage() {
                   src={design.imageUrl || "/frame1.jpg"}
                   alt={`Saved design from ${new Date(design.dateCreated).toLocaleDateString()}`}
                   className="w-full h-auto cursor-pointer"
-                  onClick={() => {setDisplayImg(design.imageUrl); setIsTwoDoor(design.two_doors)}}
+                  onClick={() => handleOpen(design)}
                 />
                 <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center">
                     <span className="text-sm text-slate-400 font-medium">
@@ -94,17 +106,18 @@ export default function MyDesignsPage() {
         )}
       </div>
 
-      <div className="flex min-h-[calc(50vh-73px)] bg-slate-900">
-          <div className="flex-[3] flex flex-col justify-center p-6">
-              <ModelPreview
-                  imgsrc={displayImg}
-                  carType={carType}
-                  isTwoDoor={isTwoDoor == "true"}
-                  leftSide={leftSide}
-              />
-          </div>
-      </div>
-
+      <Modal onClose={handleClose} open={open} keepMounted disableAutoFocus className="w-3/5 h-1/2 absolute m-auto">
+        <div className="flex min-h-[calc(50vh-73px)] bg-slate-900">
+            <div className="flex-[3] flex flex-col justify-center p-6">
+                <ModelPreview
+                    imgsrc={displayImg}
+                    carType={carType}
+                    isTwoDoor={isTwoDoor == "true"}
+                    leftSide={leftSide}
+                />
+            </div>
+        </div>
+      </Modal>
     </main>
   );
 }
