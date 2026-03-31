@@ -4,12 +4,12 @@
 import { db } from "@/db";
 import { designs } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq, desc } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm"; // Make sure to import 'and' & 'eq'
 import { redirect } from "next/navigation";
 
-export async function saveDesignsAction(imageUrls: string[]) {
+export async function saveDesignsAction(imageUrls: string[], two_doors: boolean) {
   // ... your existing code ...
   const session = await getSession();
   if (!session || !session.id) {
@@ -20,6 +20,7 @@ export async function saveDesignsAction(imageUrls: string[]) {
     const values = imageUrls.map((url) => ({
       userId: session.id,
       imageUrl: url,
+      two_doors: two_doors,
     }));
 
     await db.insert(designs).values(values);

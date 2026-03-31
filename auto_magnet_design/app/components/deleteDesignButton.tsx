@@ -1,21 +1,31 @@
+// components/deleteDesignButton.tsx
 "use client";
 
 import { useTransition, useState } from "react";
 import { deleteDesignAction } from "../actions/design-actions";
 
-export default function DeleteDesignButton({ id }: { id: number }) { // Change to string if your DB uses UUIDs
+// Added onDelete to the props
+export default function DeleteDesignButton({ 
+  id, 
+  onDelete 
+}: { 
+  id: number;
+  onDelete: () => void; 
+}) {
   const [isPending, startTransition] = useTransition();
   const [showModal, setShowModal] = useState(false);
 
   const handleConfirmDelete = () => {
     startTransition(async () => {
       const result = await deleteDesignAction(id);
+      
       if (result?.error) {
         alert(result.error);
+      } else if (result?.success) {
+        // This tells the parent page to instantly remove the design from the screen
+        onDelete();
       }
-      // Note: We don't necessarily need to close the modal manually here 
-      // because if the delete is successful, the whole component unmounts!
-      // But we'll close it just in case there's an error.
+      
       setShowModal(false); 
     });
   };

@@ -1,16 +1,17 @@
+// mydesigns/page.tsx
 "use client"
 
 import { db } from "@/db";
 import { designs } from "@/db/schema";
 import { getDesigns } from "../actions/design-actions";
 import ExportButton from "../components/ExportButton";
-import DeleteDesignButton from "../components/deleteDesignButton"; // <-- Import the new button
+import DeleteDesignButton from "../components/deleteDesignButton"; 
 import Link from "next/link";
 import ModelPreview from "../components/ModelPreview";
 import { useEffect, useState } from "react";
 
 export default function MyDesignsPage() {
-  const [userDesigns, setUserDesigns] = useState(new Array());
+  const [userDesigns, setUserDesigns] = useState<any[]>([]);
   const [carType, setCarType] = useState("medium");
   const [isTwoDoor, setIsTwoDoor] = useState("false");
   const [leftSide, setLeftSide] = useState(false);
@@ -32,6 +33,18 @@ export default function MyDesignsPage() {
     t = localStorage.getItem("left_side");
     if (t === "true") {setLeftSide(true);}
   }
+
+  // ADDED: Function to instantly remove the deleted design from the React State
+  const handleDesignDeleted = (deletedId: number) => {
+    setUserDesigns((prevDesigns) => prevDesigns.filter((d) => d.id !== deletedId));
+    
+    // Optional: If the user deletes the design they are currently previewing, 
+    // reset the preview image to the default sample.
+    setDisplayImg((prevImg) => {
+      const deletedDesign = userDesigns.find(d => d.id === deletedId);
+      return (deletedDesign && deletedDesign.imageUrl === prevImg) ? "/sample.png" : prevImg;
+    });
+  };
 
   return (
     <main className="min-h-screen p-6 bg-slate-900 text-white font-sans">
@@ -58,17 +71,21 @@ export default function MyDesignsPage() {
                 <img
                   src={design.imageUrl || "/frame1.jpg"}
                   alt={`Saved design from ${new Date(design.dateCreated).toLocaleDateString()}`}
-                  className="w-full h-auto"
+                  className="w-full h-auto cursor-pointer"
                   onClick={() => setDisplayImg(design.imageUrl)}
                 />
                 <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center">
                     <span className="text-sm text-slate-400 font-medium">
                         {new Date(design.dateCreated).toLocaleDateString()}
                     </span>
-                    {/* Wrap buttons in a flex container */}
                     <div className="flex items-center gap-2">
                       <ExportButton imgsrc={design.imageUrl} />
-                      <DeleteDesignButton id={design.id} />
+                      
+                      {/* ADDED: The onDelete prop is now passed down to the button */}
+                      <DeleteDesignButton 
+                        id={design.id} 
+                        onDelete={() => handleDesignDeleted(design.id)}
+                      />
                     </div>
                 </div>
               </div>

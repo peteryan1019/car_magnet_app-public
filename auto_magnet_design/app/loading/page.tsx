@@ -78,7 +78,7 @@ export default function LoadingPage() {
 
           // Save to My Designs database
           try {
-            await saveDesignsAction(data.urls)
+            await saveDesignsAction(data.urls, two_door)
           } catch (saveError) {
             console.error("Failed to save designs to database", saveError)
           }
