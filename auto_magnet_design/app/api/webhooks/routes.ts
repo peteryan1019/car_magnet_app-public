@@ -5,7 +5,7 @@ import { buffer } from "micro";
 export const config = { api: { bodyParser: false } };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15",
+  apiVersion: "2026-01-28.clover",
 });
 
 export async function POST(req: Request) {
