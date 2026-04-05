@@ -46,7 +46,8 @@
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.7"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
