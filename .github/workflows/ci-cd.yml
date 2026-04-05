@@ -121,7 +121,7 @@ jobs:
           echo "Testing Canary URL: ${{ env.PREVIEW_URL }}"
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.PREVIEW_URL }} || echo "failed")
           
-          if[ "$HTTP_STATUS" = "200" ]; then
+          if [ "$HTTP_STATUS" = "200" ]; then
             echo "Canary Passed! HTTP 200 OK."
             echo "canary_passed=true" >> $GITHUB_ENV
           else
