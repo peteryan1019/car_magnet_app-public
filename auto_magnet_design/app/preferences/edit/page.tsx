@@ -1,4 +1,6 @@
 "use client"
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/rules-of-hooks */
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"

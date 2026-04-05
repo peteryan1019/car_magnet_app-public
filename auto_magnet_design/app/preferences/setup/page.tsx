@@ -63,8 +63,8 @@ export default function Page() {
       // 3. Save the returned public URL so it displays in your design page
       setLogoUrl(data.publicUrl);
       localStorage.setItem("logo_url", data.publicUrl);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsUploading(false);
     }

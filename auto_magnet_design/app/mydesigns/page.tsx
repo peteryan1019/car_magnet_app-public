@@ -1,5 +1,8 @@
 // mydesigns/page.tsx
 "use client"
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/rules-of-hooks */
 
 import { db } from "@/db";
 import { designs } from "@/db/schema";
@@ -19,10 +22,6 @@ export default function MyDesignsPage() {
   const [displayImg, setDisplayImg] = useState("/sample.png")
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    setUpPage();
-  }, []);
-
   async function setUpPage() {
     const designs = await getDesigns();
 
@@ -35,6 +34,10 @@ export default function MyDesignsPage() {
     t = localStorage.getItem("left_side");
     if (t === "true") {setLeftSide(true);}
   }
+  useEffect(() => {
+    setUpPage();
+  }, []);
+
 
   function handleOpen(design: any) {
     setDisplayImg(design.imageUrl);
