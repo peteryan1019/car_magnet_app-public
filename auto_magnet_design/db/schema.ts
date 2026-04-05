@@ -1,5 +1,5 @@
 // db/schema.ts
-import { pgTable, serial, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique().notNull(),
@@ -20,4 +20,10 @@ export const designs = pgTable("designs", {
   imageUrl: text("imageUrl").notNull(),
   dateCreated: timestamp("dateCreated").defaultNow().notNull(),
   two_doors: boolean("two_doors").default(false).notNull(), 
+});
+
+export const preferences = pgTable("preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).unique().notNull(),
+  data: jsonb("data").notNull(),
 });
