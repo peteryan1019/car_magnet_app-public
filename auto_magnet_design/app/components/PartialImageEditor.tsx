@@ -147,6 +147,7 @@ export default function ImageEditor() {
     const data = canvas.toDataURL({
       format: "jpeg",
       quality: 1,
+      multiplier: 1,
     });
 
     const link = document.createElement("a");
