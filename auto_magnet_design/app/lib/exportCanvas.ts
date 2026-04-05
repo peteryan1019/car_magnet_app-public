@@ -1,7 +1,7 @@
 export async function exportImages(canvas: any) {
   if (!canvas) throw new Error("Canvas is null")
 
-  const base = canvas.toDataURL({ format: "png" })
+  const base = canvas.toDataURL({ format: "png", multiplier: 1 })
 
   const { Canvas } = await import("fabric")
   const maskCanvasEl = document.createElement("canvas")
@@ -24,7 +24,7 @@ export async function exportImages(canvas: any) {
   }
 
   maskCanvas.requestRenderAll()
-  const mask = maskCanvas.toDataURL({ format: "png" })
+  const mask = maskCanvas.toDataURL({ format: "png", multiplier: 1 })
   maskCanvas.dispose?.()
 
   return { base, mask }
