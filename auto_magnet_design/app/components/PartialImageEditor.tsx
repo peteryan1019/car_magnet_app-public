@@ -67,9 +67,6 @@ export default function ImageEditor() {
     canvas.loadFromJSON(state, () => canvas.renderAll());
   };
 
-  const 
-  };
-
   const addRect = () => {
     const canvas = fabricRef.current;
     if (!canvas) return;
