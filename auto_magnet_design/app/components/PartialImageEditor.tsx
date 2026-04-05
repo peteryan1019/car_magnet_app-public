@@ -31,7 +31,9 @@ export default function ImageEditor() {
     canvas.on("object:modified", saveHistory);
     canvas.on("object:removed", saveHistory);
 
-    return () => canvas.dispose();
+    return () => {
+      canvas.dispose();
+    };
   }, []);
 
   const saveHistory = () => {
