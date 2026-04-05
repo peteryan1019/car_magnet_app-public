@@ -138,7 +138,8 @@ export async function POST(req: NextRequest) {
       const base64Image = imageData.toString("base64");
 
       // Build contents array strictly in order
-      const contents: unknown[] =[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contents: any[] =[];
 
       // 1. First add the prompt text
       contents.push({ text: config.prompt });
