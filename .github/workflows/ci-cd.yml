@@ -120,14 +120,22 @@ jobs:
           echo "Waiting 10 seconds for Canary URL to stabilize..."
           sleep 10
           
-          echo "Testing Canary URL: ${{ env.PREVIEW_URL }}"
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" ${{ env.PREVIEW_URL }} || echo "failed")
+          echo "Testing Canary Health Endpoint: ${{ env.PREVIEW_URL }}/api/health"
           
-          if [ "$HTTP_STATUS" = "200" ]; then
-            echo "Canary Passed! HTTP 200 OK."
+          # Pass the secret token to the endpoint!
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}" \
+            ${{ env.PREVIEW_URL }}/api/health || echo "failed")
+          
+          if[ "$HTTP_STATUS" = "200" ]; then
+            echo "Canary Passed Deep Health Check! HTTP 200 OK."
             echo "canary_passed=true" >> $GITHUB_ENV
           else
-            echo "Canary Failed! HTTP Status: $HTTP_STATUS"
+            echo "Canary Failed Deep Health Check! HTTP Status: $HTTP_STATUS"
+            # If it fails, print the actual error response so you can read it in the logs!
+            echo "Error Details:"
+            curl -s -H "Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}" ${{ env.PREVIEW_URL }}/api/health
+            
             echo "canary_passed=false" >> $GITHUB_ENV
             exit 1 
           fi
