@@ -127,7 +127,7 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}" \
             ${{ env.PREVIEW_URL }}/api/health || echo "failed")
           
-          if[ "$HTTP_STATUS" = "200" ]; then
+          if [ "$HTTP_STATUS" = "200" ]; then
             echo "Canary Passed Deep Health Check! HTTP 200 OK."
             echo "canary_passed=true" >> $GITHUB_ENV
           else
