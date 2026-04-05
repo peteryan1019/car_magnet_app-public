@@ -1,12 +1,12 @@
 import { neon } from "@neondatabase/serverless";
 
 // Ensure environment variable is set
-if (!process.env.NEON_DB_URL) {
-  throw new Error("NEON_DB_URL is not defined in environment variables");
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not defined in environment variables");
 }
 
 // Export sql query function
-export const sql = neon(process.env.NEON_DB_URL);
+export const sql = neon(process.env.DATABASE_URL);
 
 // ------------------------
 // Orders Table Interface
