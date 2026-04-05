@@ -34,8 +34,8 @@ export async function insertOrder(order: {
   amount: number;
   currency: string;
   status: string;
-}) {
-  return await sql<Order>`
+}): Promise<Order[]> {
+  const result = await sql`
     INSERT INTO orders (stripe_payment_id, email, amount, currency, status, created_at)
     VALUES (
       ${order.stripe_payment_id},
@@ -48,27 +48,29 @@ export async function insertOrder(order: {
     ON CONFLICT (stripe_payment_id) DO NOTHING
     RETURNING *;
   `;
+  return result as Order[];
 }
 
 /**
  * Get all orders
  */
 export async function getOrders(): Promise<Order[]> {
-  return await sql<Order>`
+  const result = await sql`
     SELECT id, stripe_payment_id, email, amount, currency, status, created_at
     FROM orders
     ORDER BY created_at DESC;
   `;
+  return result as Order[];
 }
 
 /**
  * Get single order by Stripe Payment ID
  */
 export async function getOrderByStripeId(stripe_payment_id: string): Promise<Order | null> {
-  const [order] = await sql<Order>`
+  const [order] = await sql`
     SELECT id, stripe_payment_id, email, amount, currency, status, created_at
     FROM orders
     WHERE stripe_payment_id = ${stripe_payment_id};
   `;
-  return order || null;
+  return (order as Order) || null;
 }
