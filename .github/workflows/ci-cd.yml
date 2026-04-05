@@ -56,7 +56,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
           cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm run lint
 
   unit-tests:
@@ -71,7 +71,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
           cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm run test:ci
 
   security-scan:
@@ -86,7 +86,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
           cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm audit --audit-level=high
 
   # ==========================================
