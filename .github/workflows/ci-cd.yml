@@ -103,10 +103,12 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
+        working-directory: .
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Canary to Vercel
         id: deploy-canary
+        working-directory: .
         run: |
           echo "Deploying preview environment..."
           PREVIEW_URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }})
@@ -132,6 +134,7 @@ jobs:
 
       - name: Promote to Production
         if: env.canary_passed == 'true'
+        working-directory: .
         run: |
           echo "Canary analysis successful! Promoting to Production..."
           vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
