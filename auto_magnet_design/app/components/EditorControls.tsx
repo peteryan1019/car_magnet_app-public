@@ -1,6 +1,6 @@
 "use client";
 
-export default function EditorControls({ sendScript }: any) {
+export default function EditorControls({ sendScript }: { sendScript: (script: string) => void }) {
 
   function exportPNG() {
     sendScript(`
@@ -18,8 +18,9 @@ export default function EditorControls({ sendScript }: any) {
     `);
   }
 
-  function uploadLogo(e: any) {
-    const file = e.target.files[0];
+  function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
     const url = URL.createObjectURL(file);
 
     sendScript(`

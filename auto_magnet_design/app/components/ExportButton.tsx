@@ -9,7 +9,7 @@ interface ExportButtonProps {
 }
 
 export default function ExportButton({imgsrc, className}: ExportButtonProps) {
-    const [img, setImg] = useState<any>(null);
+    const [img, setImg] = useState<HTMLImageElement | null>(null);
 
     useEffect(()=>{
         const temp = new Image();

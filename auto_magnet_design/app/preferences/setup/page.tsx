@@ -22,7 +22,7 @@ export default function Page() {
   const [doorCutPx, setDoorCutPx] = useState<number>(0);
   const [dpi, setDpi] = useState<number>(60);
 
-  const [error, setError] = useState<String | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);

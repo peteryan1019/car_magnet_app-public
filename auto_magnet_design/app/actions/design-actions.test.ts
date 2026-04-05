@@ -32,7 +32,7 @@ describe('Design Server Actions', () => {
     it('returns Unauthorized when the user is not logged in', async () => {
       // Mock session returning null
       const { getSession } = await import('@/lib/auth');
-      (getSession as any).mockResolvedValueOnce(null);
+      (getSession as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       const result = await saveDesignsAction(['http://example.com/image.jpg'], true);
       
@@ -43,7 +43,7 @@ describe('Design Server Actions', () => {
 
     it('successfully saves the design if the user is logged in', async () => {
       const { getSession } = await import('@/lib/auth');
-      (getSession as any).mockResolvedValueOnce({ id: 10, username: 'testuser' });
+      (getSession as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 10, username: 'testuser' });
 
       // Mock our database DB logic succeeding
       mockInsert.mockResolvedValueOnce([]);
@@ -62,7 +62,7 @@ describe('Design Server Actions', () => {
   describe('deleteDesignAction', () => {
     it('blocks attempting to delete a design while unauthenticated', async () => {
       const { getSession } = await import('@/lib/auth');
-      (getSession as any).mockResolvedValueOnce(null);
+      (getSession as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       const result = await deleteDesignAction(101);
 

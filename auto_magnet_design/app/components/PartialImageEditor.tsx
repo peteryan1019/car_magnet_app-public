@@ -30,14 +30,21 @@ export default function ImageEditor() {
 
     fabricRef.current = canvas;
 
+    const doSaveHistory = () => {
+      const c = fabricRef.current;
+      if (!c) return;
+      history.current.push(JSON.stringify(c));
+      redoStack.current = [];
+    };
+
     // Save initial blank state
-    saveHistory();
+    doSaveHistory();
 
     // Event listeners for history tracking
-    canvas.on("object:added", saveHistory);
-    canvas.on("object:modified", saveHistory);
-    canvas.on("object:removed", saveHistory);
-    canvas.on("path:created", saveHistory); // Triggers after freehand drawing
+    canvas.on("object:added", doSaveHistory);
+    canvas.on("object:modified", doSaveHistory);
+    canvas.on("object:removed", doSaveHistory);
+    canvas.on("path:created", doSaveHistory); // Triggers after freehand drawing
 
     return () => {
       canvas.dispose();
