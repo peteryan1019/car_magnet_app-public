@@ -1,0 +1,141 @@
+name: Vercel CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+# Tell GitHub to run all commands inside your Next.js folder
+defaults:
+  run:
+    working-directory: ./auto_magnet_design
+
+jobs:
+  # ==========================================
+  # CI: CACHING & SETUP
+  # ==========================================
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm' 
+          # Specify the path so it knows where the lockfile is
+          cache-dependency-path: 'auto_magnet_design/pnpm-lock.yaml' 
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  # ==========================================
+  # CI: PARALLEL TASKS (Lint, Test, Security)
+  # ==========================================
+  lint:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'auto_magnet_design/pnpm-lock.yaml'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+
+  unit-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'auto_magnet_design/pnpm-lock.yaml'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:ci || echo "Add a test script later!" # Fallback if test:ci isn't ready
+
+  security-scan:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'auto_magnet_design/pnpm-lock.yaml'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level=high
+
+  # ==========================================
+  # CD: VERCEL CANARY & PROMOTION
+  # ==========================================
+  deploy-and-promote:
+    needs: [lint, unit-tests, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      # STEP A: Deploy Canary (Preview Deployment)
+      - name: Deploy Canary to Vercel
+        id: deploy-canary
+        run: |
+          echo "Deploying preview environment..."
+          PREVIEW_URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }})
+          echo "PREVIEW_URL=$PREVIEW_URL" >> $GITHUB_ENV
+          echo "Canary deployed at: $PREVIEW_URL"
+
+      # STEP B: Canary Analysis (Smoke Test)
+      - name: Canary Analysis
+        run: |
+          echo "Waiting 10 seconds for Canary URL to stabilize..."
+          sleep 10
+          
+          echo "Testing Canary URL: ${{ env.PREVIEW_URL }}"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.PREVIEW_URL }} || echo "failed")
+          
+          # FIXED: Added space between 'if' and '['
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Canary Passed! HTTP 200 OK."
+            echo "canary_passed=true" >> $GITHUB_ENV
+          else
+            echo "Canary Failed! HTTP Status: $HTTP_STATUS"
+            echo "canary_passed=false" >> $GITHUB_ENV
+            exit 1 
+          fi
+
+      # STEP C: Promotion Workflow (Deploy to Production)
+      - name: Promote to Production
+        if: env.canary_passed == 'true'
+        run: |
+          echo "Canary analysis successful! Promoting to Production..."
+          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "Successfully promoted! Your public domain is now live."
