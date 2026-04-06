@@ -22,7 +22,7 @@ export async function createSession(payload: { username: string; id: number }) {
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("1h") // Session lasts 1 hour
+    .setExpirationTime("48h") // Session lasts 24 hours
     .sign(secretKey);
 
   const cookieStore = await cookies();

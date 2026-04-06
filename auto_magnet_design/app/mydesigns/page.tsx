@@ -42,7 +42,7 @@ export default function MyDesignsPage() {
 
   function handleOpen(design: any) {
     setDisplayImg(design.imageUrl);
-    setIsTwoDoor(design.two_doors);
+    setIsTwoDoor(design.two_doors == true ? "true" : "false");
     setOpen(true);
   }
 
@@ -83,14 +83,16 @@ export default function MyDesignsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userDesigns.map((design: any) => (
-              <div key={design.id} className="bg-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                <img
-                  src={design.imageUrl || "/frame1.jpg"}
-                  alt={`Saved design from ${new Date(design.dateCreated).toLocaleDateString()}`}
-                  className="w-full h-auto cursor-pointer"
-                  onClick={() => handleOpen(design)}
-                />
-                <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center">
+              <div key={design.id} className="bg-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+                <div className="w-full flex-grow flex items-center justify-center bg-slate-900/50 overflow-hidden aspect-[3/1]">
+                  <img
+                    src={design.imageUrl || "/frame1.jpg"}
+                    alt={`Saved design from ${new Date(design.dateCreated).toLocaleDateString()}`}
+                    className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                    onClick={() => handleOpen(design)}
+                  />
+                </div>
+                <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center shrink-0">
                     <span className="text-sm text-slate-400 font-medium">
                         {new Date(design.dateCreated).toLocaleDateString()}
                     </span>
