@@ -85,7 +85,7 @@ export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftS
         texture.colorSpace = THREE.SRGBColorSpace;
         stickerMat.current.map = texture;
         stickerMat.current.needsUpdate = true;
-    }, [imgsrc]);
+    }, [imgsrc, leftSide]);
 
     // Swap model whenever carType / isTwoDoor / leftSide changes.
     // The cancelled flag prevents a stale async load from adding its model
@@ -142,6 +142,6 @@ export default function ModelPreview({ imgsrc, carType, isTwoDoor = false, leftS
 
     return <>
     <div ref={containerRef} style={{ width: "100%", height: "100%" }}></div>
-    <p className="text-slate-500 text-xs">This work is based on "Lowpoly Generic SUV" (https://sketchfab.com/3d-models/lowpoly-generic-suv-edc994ad28ed438cb365c0e0389ac177) by mk2design (https://sketchfab.com/mk2design) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)</p>
+    <p className="text-slate-500 text-xs">This work is based on &quot;Lowpoly Generic SUV&quot; (https://sketchfab.com/3d-models/lowpoly-generic-suv-edc994ad28ed438cb365c0e0389ac177) by mk2design (https://sketchfab.com/mk2design) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)</p>
     </>
 }

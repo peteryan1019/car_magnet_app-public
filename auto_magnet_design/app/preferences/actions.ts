@@ -6,7 +6,7 @@ import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 
-export async function updatePreferencesAction(preferences_record: Record<string, any>) {
+export async function updatePreferencesAction(preferences_record: Record<string, unknown>) {
   const session = await getSession();
   
   if (!session || !session.id) {

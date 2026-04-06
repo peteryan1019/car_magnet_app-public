@@ -83,8 +83,8 @@ ${prompt}
     }
 
     return NextResponse.json({ url: publicUrl });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Gemini mask error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

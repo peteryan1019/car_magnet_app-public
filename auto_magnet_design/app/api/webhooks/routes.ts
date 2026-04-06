@@ -1,27 +1,25 @@
 import Stripe from "stripe";
 import { sql } from "@/lib/db";
-import { buffer } from "micro";
-
-export const config = { api: { bodyParser: false } };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15",
+  apiVersion: "2026-01-28.clover",
 });
 
 export async function POST(req: Request) {
-  const buf = await buffer(req);
+  const body = await req.text();
   const sig = req.headers.get("stripe-signature")!;
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
-      buf,
+      body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
-    console.error("Webhook signature verification failed.", err.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Webhook signature verification failed.", errorMsg);
+    return new Response(`Webhook Error: ${errorMsg}`, { status: 400 });
   }
 
   // Handle the event

@@ -6,7 +6,7 @@ import { generateSalt, hashPassword, createSession, logout } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
-export async function registerAction(prevState: any, formData: FormData) {
+export async function registerAction(prevState: unknown, formData: FormData) {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
 
@@ -43,12 +43,12 @@ export async function registerAction(prevState: any, formData: FormData) {
       await db.delete(users).where(eq(users.id, newUser.id));
       throw innerError;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Detailed logging of the actual error object
     console.error("[Register Failed] DB Transaction Error:", error);
 
     // Handle specific Postgres error codes
-    if (error.code === "23505") {
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === "23505") {
       // Unique violation
       console.warn(`[Register Warning] Username '${username}' already exists.`);
       return { error: "Username already taken" };
@@ -61,7 +61,7 @@ export async function registerAction(prevState: any, formData: FormData) {
   redirect("/");
 }
 
-export async function loginAction(prevState: any, formData: FormData) {
+export async function loginAction(prevState: unknown, formData: FormData) {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
 
