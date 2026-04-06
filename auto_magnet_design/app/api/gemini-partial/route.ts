@@ -1,9 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
-import fs from "fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { getAccessToken } from "@/lib/gcs";
 
 export const runtime = "nodejs";
 
@@ -62,18 +62,43 @@ ${prompt}
       },
     });
 
-    const outDir = path.join(process.cwd(), "public", "gemini_generated");
-    await fsp.mkdir(outDir, { recursive: true });
-
     let publicUrl: string | null = null;
 
     for (const part of response.candidates?.[0]?.content?.parts ?? []) {
       if (part.inlineData?.data) {
         const filename = `mask-${Date.now()}-${crypto.randomUUID()}.png`;
-        const outPath = path.join(outDir, filename);
+        const buffer = Buffer.from(part.inlineData.data, "base64");
 
-        await fsp.writeFile(outPath, Buffer.from(part.inlineData.data, "base64"));
-        publicUrl = `/gemini_generated/${filename}`;
+        const bucketName = process.env.GOOGLE_CLOUD_STORAGE_BUCKET;
+        const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+        let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+        if (!bucketName || !clientEmail || !privateKey) {
+           throw new Error("GCS credentials missing. Cannot upload generated image.");
+        }
+        privateKey = privateKey.replace(/\\n/g, '\n');
+
+        const token = await getAccessToken(clientEmail, privateKey);
+        const targetUrl = `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=media&name=${encodeURIComponent(filename)}`;
+
+        console.log(`[gemini-partial] Uploading generated image directly to GCS...`);
+        const uploadRes = await fetch(targetUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'image/png',
+            'Content-Length': buffer.length.toString()
+          },
+          body: new Uint8Array(buffer)
+        });
+
+        if (!uploadRes.ok) {
+           const uploadData = await uploadRes.text();
+           throw new Error(`Failed to upload generated image: ${uploadData}`);
+        }
+
+        publicUrl = `https://storage.googleapis.com/${bucketName}/${encodeURIComponent(filename)}`;
+        console.log(`[gemini-partial] Image saved to GCS:`, publicUrl);
         break;
       }
     }

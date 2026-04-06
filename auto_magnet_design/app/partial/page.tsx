@@ -63,7 +63,7 @@ export default function PartialPage() {
       const offsetY = ((e.clientY - rect.top) / rect.height) * canvas.height;
       ctx.lineTo(offsetX, offsetY);
       ctx.strokeStyle = "rgba(255,255,255,1)";
-      ctx.lineWidth = 20;
+      ctx.lineWidth = 10;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.stroke();
@@ -148,18 +148,10 @@ export default function PartialPage() {
   }
 
   const backToEditor = async () => {
-    try {
-      const res = await fetch("/api/saveImage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: currentImage }),
-      });
-      if (!res.ok) throw new Error("Failed to save image");
+      //store new image URL in localStorage for editor to access
+      localStorage.setItem("imageToEdit", currentImage);
       router.push("/editor");
-    } catch (err) {
-      console.error("Could not save image to server:", err);
-      alert("Could not save image to server");
-    }
+     
   };
 
   return (
