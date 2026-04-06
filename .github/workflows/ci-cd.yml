@@ -124,7 +124,7 @@ jobs:
           
           # Pass the secret token to the endpoint!
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}" \
+            -H 'Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}' \
             ${{ env.PREVIEW_URL }}/api/health || echo "failed")
           
           if [ "$HTTP_STATUS" = "200" ]; then
@@ -134,7 +134,7 @@ jobs:
             echo "Canary Failed Deep Health Check! HTTP Status: $HTTP_STATUS"
             # If it fails, print the actual error response so you can read it in the logs!
             echo "Error Details:"
-            curl -s -H "Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}" ${{ env.PREVIEW_URL }}/api/health
+            curl -s -H 'Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}' ${{ env.PREVIEW_URL }}/api/health
             
             echo "canary_passed=false" >> $GITHUB_ENV
             exit 1 
