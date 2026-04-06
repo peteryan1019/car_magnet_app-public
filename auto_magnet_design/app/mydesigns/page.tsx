@@ -94,7 +94,7 @@ export default function MyDesignsPage() {
                         {new Date(design.dateCreated).toLocaleDateString()}
                     </span>
                     <div className="flex items-center gap-2">
-                      <ExportButton imgsrc={design.imageUrl} />
+                      <ExportButton imgsrc={design.imageUrl} leftSide={leftSide} needsCut={design.two_doors}/>
                       
                       {/* ADDED: The onDelete prop is now passed down to the button */}
                       <DeleteDesignButton 

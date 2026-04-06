@@ -153,7 +153,7 @@ export default function ResultsPage() {
                 </button>
 
                 {/* Existing export */}
-                <ExportButton imgsrc={imageUrl} />
+                <ExportButton imgsrc={imageUrl} leftSide={leftSide} needsCut={isTwoDoor == "true"}/>
               </div>
             </div>
           ))}
