@@ -11,16 +11,17 @@ interface ExportButtonProps {
 }
 
 export default function ExportButton({imgsrc, className, leftSide=false, needsCut=true}: ExportButtonProps) {
-    const [img, setImg] = useState<any>(null);
+    const [img, setImg] = useState<HTMLImageElement | null>(null);
 
     useEffect(()=>{
         const temp = new Image();
         temp.src = imgsrc;
+        temp.alt = "";
         temp.onload = () => {
             setImg(temp);
         }
         return () => {temp.onload = () => {}};
-    }, [imgsrc])
+    }, [imgsrc, leftSide])
 
     // checks localstorage for car type and returns proper cut position
     function getCutPos(): number {
