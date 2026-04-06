@@ -2,10 +2,62 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { registerAction } from "@/app/actions/auth-actions";
+import { registerAction, verifyAndRegisterAction } from "@/app/actions/auth-actions";
 
 export default function RegisterPage() {
   const [state, action, isPending] = useActionState(registerAction, undefined);
+  const [verifyState, verifyAction, isVerifyPending] = useActionState(verifyAndRegisterAction, undefined);
+
+  // If the server action returned the "verify" step, show that form instead
+  if (state?.step === "verify" && state?.email) {
+    return (
+      <div className="flex min-h-[calc(100vh-73px)] items-center justify-center bg-slate-900 font-sans p-4">
+        <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden -translate-y-8">
+          <div className="p-8">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-white tracking-tight">Verify Email</h1>
+              <p className="text-sm text-slate-400 mt-2">
+                We've sent a 6-digit code to <strong>{state.email}</strong>.
+              </p>
+            </div>
+
+            {verifyState?.error && (
+              <div className="mb-4 p-3 bg-red-900/50 text-red-300 text-sm rounded-lg border border-red-800 text-center">
+                {verifyState.error}
+              </div>
+            )}
+
+            <form action={verifyAction} className="space-y-6">
+              {/* Hidden field to pass the email cleanly to the next action */}
+              <input type="hidden" name="email" value={state.email} />
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Verification Code
+                </label>
+                <input 
+                  name="code" 
+                  type="text" 
+                  maxLength={6}
+                  required 
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all outline-none placeholder-slate-400 text-white text-center text-2xl tracking-[0.5em] font-mono" 
+                  placeholder="000000" 
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isVerifyPending}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none transition-all disabled:opacity-50"
+              >
+                {isVerifyPending ? "Verifying..." : "Verify & Complete Signup"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-73px)] items-center justify-center bg-slate-900 font-sans p-4">
@@ -38,6 +90,19 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
+                Email Address
+              </label>
+              <input 
+                name="email" 
+                type="email" 
+                required 
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all outline-none placeholder-slate-400 text-white" 
+                placeholder="john@example.com" 
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Password
               </label>
               <input 
@@ -55,7 +120,7 @@ export default function RegisterPage() {
               disabled={isPending}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none transition-all disabled:opacity-50"
             >
-              {isPending ? "Creating Account..." : "Sign Up"}
+              {isPending ? "Sending Code..." : "Sign Up"}
             </button>
           </form>
         </div>

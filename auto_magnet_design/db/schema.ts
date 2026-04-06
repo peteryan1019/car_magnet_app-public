@@ -1,17 +1,21 @@
 // db/schema.ts
 import { pgTable, serial, text, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique().notNull(),
-  pswd_salt_hash: text("pswd_salt_hash").notNull(),
+  email: text("email").unique().notNull(), // added for email logic
+  password_hash: text("password_hash").notNull(), // updated to match auth-actions.ts name change
   date_created: timestamp("date_created").defaultNow().notNull(),
 });
 
-export const salt = pgTable("salt", {
+export const verificationTokens = pgTable("verificationTokens", {
   id: serial("id").primaryKey(),
-  // references the username in the users table
-  username: text("username").references(() => users.username).notNull(),
-  salt: text("salt").notNull(),
+  email: text("email").notNull().unique(),
+  username: text("username").notNull(),
+  password_hash: text("password_hash").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
 });
 
 export const designs = pgTable("designs", {

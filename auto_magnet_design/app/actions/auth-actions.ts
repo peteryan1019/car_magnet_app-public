@@ -1,63 +1,139 @@
 "use server";
 
 import { db } from "@/db";
-import { users, salt as saltTable } from "@/db/schema";
-import { generateSalt, hashPassword, createSession, logout } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { users, verificationTokens } from "@/db/schema";
+import { createSession, logout } from "@/lib/auth";
+import { eq, or, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import bcrypt from "bcrypt";
+import { z } from "zod";
+import { Resend } from "resend";
+import { randomInt } from "crypto"; // <-- Added
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").max(50),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(100),
+});
 
 export async function registerAction(prevState: unknown, formData: FormData) {
-  const username = formData.get("username") as string;
-  const password = formData.get("password") as string;
-
-  // Log the attempt
-  console.log(`[Register Attempt] Username: ${username}`);
-
-  if (!username || !password) {
-    console.error("[Register Error] Missing fields");
-    return { error: "Fields required" };
+  const validation = registerSchema.safeParse(Object.fromEntries(formData));
+  
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message };
   }
 
-  const salt = generateSalt();
-  const hash = hashPassword(password, salt);
+  const { username, email, password } = validation.data;
+  console.log(`[Register Attempt] Username: ${username}, Email: ${email}`);
 
   try {
-    // 1. Insert User
-    const [newUser] = await db
-      .insert(users)
-      .values({ username, pswd_salt_hash: hash })
-      .returning({ id: users.id, username: users.username });
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(or(eq(users.username, username), eq(users.email, email)));
 
-    try {
-      // 2. Insert Salt
-      await db.insert(saltTable).values({
-        username: newUser.username,
-        salt: salt,
+    if (existingUser) {
+      if (existingUser.username === username) return { error: "Username already taken" };
+      if (existingUser.email === email) return { error: "Email already registered" };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Cryptographically secure 6-digit code
+    const code = randomInt(100000, 1000000).toString();
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 mins
+
+    // Upsert: Overwrites existing pending registration for this email 
+    // (Requires email column in verificationTokens schema to be .unique())
+    await db
+      .insert(verificationTokens)
+      .values({ email, username, password_hash: hashedPassword, code, expiresAt })
+      .onConflictDoUpdate({
+        target: verificationTokens.email,
+        set: { username, password_hash: hashedPassword, code, expiresAt }
       });
+    
+    const { error: emailError } = await resend.emails.send({
+      from: "AutoMagnet <onboarding@resend.dev>", 
+      to: email, 
+      subject: "Your AutoMagnet Verification Code",
+      html: `
+        <div>
+          <h2>Welcome to AutoMagnet!</h2>
+          <p>Your verification code is: <strong>${code}</strong></p>
+          <p>This code will expire in 2 minutes.</p>
+        </div>
+      `,
+    });
 
-      // 3. Create Session
-      await createSession({ username: newUser.username, id: newUser.id });
-      console.log(`[Register Success] User created: ${username}`);
-    } catch (innerError) {
-      // MANUAL ROLLBACK: If salt or session fails, remove the user
-      await db.delete(users).where(eq(users.id, newUser.id));
-      throw innerError;
+    if (emailError) {
+      console.error("[Email Sending Failed]:", emailError);
+      return { error: "Failed to send verification email. Please try again." };
     }
-  } catch (error: unknown) {
-    // Detailed logging of the actual error object
-    console.error("[Register Failed] DB Transaction Error:", error);
 
-    // Handle specific Postgres error codes
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === "23505") {
-      // Unique violation
-      console.warn(`[Register Warning] Username '${username}' already exists.`);
-      return { error: "Username already taken" };
-    }
+    return { step: "verify", email };
 
-    // Generic fallback for other DB errors
+  } catch (error: any) {
+    console.error("[Register Failed] DB Error:", error);
     return { error: "Registration failed. Please try again later." };
   }
+}
 
+// Optional Zod schema for the verification step
+const verifySchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+});
+
+export async function verifyAndRegisterAction(prevState: unknown, formData: FormData) {
+  const validation = verifySchema.safeParse(Object.fromEntries(formData));
+  if (!validation.success) return { error: validation.error.issues[0].message };
+
+  const { email, code } = validation.data;
+
+  try {
+    const [token] = await db
+      .select()
+      .from(verificationTokens)
+      .where(eq(verificationTokens.email, email));
+
+    if (!token) return { error: "Invalid or expired verification code." };
+
+    if (new Date() > new Date(token.expiresAt)) {
+        await db.delete(verificationTokens).where(eq(verificationTokens.email, email));
+        return { error: "Verification code has expired. Please try registering again." };
+    }
+
+    if (token.code !== code) {
+      // NOTE: For strict security, increment a `failed_attempts` column here and delete if >= 5.
+      return { error: "Incorrect verification code." };
+    }
+
+    const [newUser] = await db
+      .insert(users)
+      .values({ 
+        username: token.username, 
+        email: token.email,
+        password_hash: token.password_hash 
+      })
+      .returning({ id: users.id, username: users.username });
+
+    await db.delete(verificationTokens).where(eq(verificationTokens.email, email));
+
+    await createSession({ username: newUser.username, id: newUser.id });
+    console.log(`[Register Success] User verified & created: ${newUser.username}`);
+
+  } catch (error: any) {
+    console.error("[Verify Failed] DB Error:", error);
+    if (error.code === "23505") {
+      return { error: "This user or email is already registered." };
+    }
+    return { error: "Verification failed. System error." };
+  }
+
+  // Next.js redirect must be OUTSIDE try/catch blocks because it works by throwing an error under the hood
   redirect("/");
 }
 
@@ -67,8 +143,11 @@ export async function loginAction(prevState: unknown, formData: FormData) {
 
   console.log(`[Login Attempt] Username: ${username}`);
 
+  if (!username || !password) {
+    return { error: "Invalid credentials" };
+  }
+
   try {
-    // 1. Fetch User
     const [user] = await db
       .select()
       .from(users)
@@ -76,37 +155,20 @@ export async function loginAction(prevState: unknown, formData: FormData) {
 
     if (!user) {
       console.warn(`[Login Failed] User not found: ${username}`);
-      // Security: Return generic message to prevent username enumeration
       return { error: "Invalid credentials" };
     }
 
-    // 2. Fetch Salt
-    const [saltRecord] = await db
-      .select()
-      .from(saltTable)
-      .where(eq(saltTable.username, username));
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
-    if (!saltRecord) {
-      // This is a critical data integrity issue (User exists but salt is gone)
-      console.error(`[CRITICAL ERROR] Salt missing for user: ${username}`);
-      return {
-        error: "System error: Account data corrupted. Contact support.",
-      };
-    }
-
-    // 3. Check Hash
-    const inputHash = hashPassword(password, saltRecord.salt);
-
-    if (inputHash !== user.pswd_salt_hash) {
+    if (!isPasswordValid) {
       console.warn(`[Login Failed] Incorrect password for user: ${username}`);
       return { error: "Invalid credentials" };
     }
 
-    // 4. Success
     console.log(`[Login Success] User logged in: ${username}`);
     await createSession({ username: user.username, id: user.id });
+
   } catch (error) {
-    // Catch database connection errors (e.g. Neon is down)
     console.error("[Login Error] Unexpected Exception:", error);
     return { error: "Login failed due to a system error. Please try again." };
   }
