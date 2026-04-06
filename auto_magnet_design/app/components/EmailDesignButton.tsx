@@ -3,8 +3,7 @@ import { useTransition, useState } from "react";
 import { sendEmailAction } from "../actions/email-actions";
 
 export default function SendEmailButton({
-  to,
-  imageUrl,
+  imageUrl
 }: {
   to: string;
   imageUrl: string;
@@ -14,7 +13,7 @@ export default function SendEmailButton({
 
   const handleSend = () => {
     startTransition(async () => {
-      const result = await sendEmailAction(to, imageUrl);
+      const result = await sendEmailAction(imageUrl);
 
       if (result?.error) {
         alert(result.error);
@@ -46,7 +45,7 @@ export default function SendEmailButton({
           Sent
         </span>
       ) : (
-        "Send Image"
+        "Send to email"
       )}
     </button>
   );

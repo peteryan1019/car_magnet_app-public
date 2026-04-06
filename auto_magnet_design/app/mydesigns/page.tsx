@@ -100,7 +100,7 @@ export default function MyDesignsPage() {
                       <ExportButton imgsrc={design.imageUrl} leftSide={leftSide} needsCut={design.two_doors}/>
                       
                       {/* ADDED: The onDelete prop is now passed down to the button */}
-                      <SendEmailButton to={"simonmiyashita04@gmail.com"} imageUrl={design.imageUrl} />
+                      <SendEmailButton imageUrl={design.imageUrl} />
                       <DeleteDesignButton 
                         id={design.id} 
                         onDelete={() => handleDesignDeleted(design.id)}
