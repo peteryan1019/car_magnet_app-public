@@ -6,10 +6,7 @@ export default function PaymentSuccessPage() {
   const router = useRouter();
 
   const handleBackToDesigns = () => {
-    // ✅ Set paid flag in localStorage
     localStorage.setItem("paid", "true");
-
-    // Navigate after setting
     router.push("/mydesigns");
   };
 

@@ -16,8 +16,6 @@ export default function MyDesignsPage() {
   const [leftSide, setLeftSide] = useState(false)
   const [displayImg, setDisplayImg] = useState("/sample.png")
   const [open, setOpen] = useState(false)
-
-  // ✅ NEW
   const [isPaid, setIsPaid] = useState(false)
 
   async function setUpPage() {
@@ -33,7 +31,6 @@ export default function MyDesignsPage() {
     t = localStorage.getItem("left_side")
     if (t === "true") setLeftSide(true)
 
-    // ✅ READ PAID FLAG
     const paid = localStorage.getItem("paid")
     if (paid === "true") setIsPaid(true)
   }
@@ -69,7 +66,7 @@ export default function MyDesignsPage() {
               key={design.id}
               className="bg-slate-800 rounded-xl overflow-hidden relative"
             >
-              {/* ✅ PAID BADGE */}
+              
               {isPaid && index === 0 && (
                 <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
                   PAID
