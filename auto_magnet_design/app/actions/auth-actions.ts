@@ -75,7 +75,7 @@ export async function registerAction(prevState: unknown, formData: FormData) {
 
     return { step: "verify", email };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Register Failed] DB Error:", error);
     return { error: "Registration failed. Please try again later." };
   }
@@ -125,9 +125,9 @@ export async function verifyAndRegisterAction(prevState: unknown, formData: Form
     await createSession({ username: newUser.username, id: newUser.id });
     console.log(`[Register Success] User verified & created: ${newUser.username}`);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Verify Failed] DB Error:", error);
-    if (error.code === "23505") {
+    if (error !== null && typeof error === 'object' && 'code' in error && error.code === "23505") {
       return { error: "This user or email is already registered." };
     }
     return { error: "Verification failed. System error." };
