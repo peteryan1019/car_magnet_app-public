@@ -52,14 +52,8 @@ export default function ResultsPage() {
 
   const editImage = async (imageUrl: string) => {
     try {
-      const res = await fetch("/api/saveImage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl }),
-      })
-
-      if (!res.ok) throw new Error("Failed to save image")
-
+      //store imageUrl in localStorage for editor to access
+      localStorage.setItem("imageToEdit", imageUrl)
       router.push("/editor")
     } catch (err) {
       console.error("Could not save image to server:", err)

@@ -1,9 +1,17 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+
 
 export default function DesignEditor() {
+  //retrieve image URL from localStorage
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    setImageUrl(localStorage.getItem("imageToEdit") || "/sample.png");
+    console.log("imageToEdit:", localStorage.getItem("imageToEdit"));
+  }, []);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -44,7 +52,7 @@ export default function DesignEditor() {
     };
   }, []);
 
-  const exportImage = () => {
+  const exportImage = async () => {
     const iframe = iframeRef.current;
     if (!iframe) return;
 
@@ -52,9 +60,28 @@ export default function DesignEditor() {
     const canvas = doc?.querySelector("#canvas_minipaint") as HTMLCanvasElement | null;
     if (!canvas) return;
 
-    const image = canvas.toDataURL("image/jpeg", 0.95);
-    localStorage.setItem("designImage", image);
-    window.location.href = "/preview";
+    try {
+      const image = canvas.toDataURL("image/jpeg", 0.95);
+      const isTwoDoor = localStorage.getItem("two_door") === "true";
+      
+      const response = await fetch("/api/saveImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: image, two_doors: isTwoDoor })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to upload image");
+      }
+
+      localStorage.setItem("designImage", data.url);
+      window.location.href = "/preview";
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload the image to GCS");
+    }
   };
 
   const editWithAI = () => {
@@ -89,11 +116,13 @@ export default function DesignEditor() {
         Edit with AI
       </button>
 
-      <iframe
-        ref={iframeRef}
-        src="/minipaint/index.html?image=/sample.png"
-        className="w-full h-full border-none"
-      />
+      {imageUrl && (
+        <iframe
+          ref={iframeRef}
+          src={`/minipaint/index.html?image=${imageUrl}`}
+          className="w-full h-full border-none"
+        />
+      )}
     </div>
   );
 }
