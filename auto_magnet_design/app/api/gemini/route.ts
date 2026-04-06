@@ -1,17 +1,12 @@
-import { GoogleGenAI, Modality } from "@google/genai";
-import fs from "fs";
+import { GoogleGenAI } from "@google/genai";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { type NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import Anthropic from "@anthropic-ai/sdk";
 
 export const runtime = "nodejs";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY, // defaults to process.env["ANTHROPIC_API_KEY"]
-});
 
 function getSignedJwt(clientEmail: string, privateKey: string) {
   const header = { alg: 'RS256', typ: 'JWT' };
@@ -25,7 +20,7 @@ function getSignedJwt(clientEmail: string, privateKey: string) {
     iat
   };
 
-  const encodeBase64Url = (obj: any) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const encodeBase64Url = (obj: unknown) => Buffer.from(JSON.stringify(obj)).toString('base64url');
   const signatureInput = `${encodeBase64Url(header)}.${encodeBase64Url(payload)}`;
   
   const sign = crypto.createSign('RSA-SHA256');
@@ -52,32 +47,7 @@ async function getAccessToken(clientEmail: string, privateKey: string) {
   return data.access_token;
 }
 
-async function enhancePrompt(bannerDetails: string, aspectRatio: string): Promise<string> {
-  try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514", 
-      max_tokens: 1024,
-      messages:[
-        {
-          role: "user",
-          content: `You are an amazing design instructions writer. You will take the following banner details:\n\n${bannerDetails}\n\nPlace the Primary Text in the center of the frame, and appropriately arrange the secondary text, phone number, and website around it. Feel free to change the background color and the frame color. Make sure that the text color, font, and size fit aesthetically together with the background and frame colors while ensuring high contrast. Optionally, decide on which text to emphasize with a different color, size, or weight. Use aspect ratio ${aspectRatio}. Output design instructions, adhering to each idea the user gave (do not leave out any ideas given by the user), while turning it into precise design instructions. When you recieve the prompt, just go, and output your design instructions. Do not acknowlege the command, do not acknowledge the user, do not add additional words, just go and output what you have.`,
-        },
-      ],
-    });
 
-    const firstBlock = response.content[0];
-    if (firstBlock.type === "text") {
-      const enhanced_prompt = firstBlock.text;
-      console.log("enhanced prompt from Claude: ", enhanced_prompt);
-      return enhanced_prompt;
-    } else {
-      throw new Error("Unexpected response type from Claude API");
-    }
-  } catch (error) {
-    console.error("Error calling Anthropic API:", error);
-    throw error;
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -92,7 +62,6 @@ export async function POST(req: NextRequest) {
       logoUrl 
     } = await req.json();
 
-    const anthropic = new Anthropic();
 
     // Fetch the logo if provided, to convert it to base64 inline data for Gemini
     let logoInlineData = null;
@@ -169,6 +138,7 @@ export async function POST(req: NextRequest) {
       const base64Image = imageData.toString("base64");
 
       // Build contents array strictly in order
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const contents: any[] =[];
 
       // 1. First add the prompt text
@@ -260,11 +230,11 @@ export async function POST(req: NextRequest) {
     console.log(`[v0] ━━━ TOTAL TIME: ${totalTime}s ━━━`);
 
     return NextResponse.json({ urls: results }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Image edit error:", error);
-    const status = error?.status ?? 500;
+    const status = error instanceof Error && 'status' in error ? Number((error as {status: number}).status) : 500;
     return NextResponse.json(
-      { error: error?.message ?? "Unexpected error" },
+      { error: error instanceof Error ? error.message : "Unexpected error" },
       { status },
     );
   }

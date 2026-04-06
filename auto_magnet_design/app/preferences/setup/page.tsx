@@ -22,7 +22,7 @@ export default function Page() {
   const [doorCutPx, setDoorCutPx] = useState<number>(0);
   const [dpi, setDpi] = useState<number>(60);
 
-  const [error, setError] = useState<String | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,8 +63,8 @@ export default function Page() {
       // 3. Save the returned public URL so it displays in your design page
       setLogoUrl(data.publicUrl);
       localStorage.setItem("logo_url", data.publicUrl);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsUploading(false);
     }

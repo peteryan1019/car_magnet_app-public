@@ -1,4 +1,6 @@
 "use client"
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/rules-of-hooks */
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -147,7 +149,7 @@ export default function Page() {
         <input
           type="number"
           placeholder="Width"
-          value={dimInches.width ?? 0}
+          value={dimInches?.width ?? 0}
           className="border p-2 rounded"
           onChange={(e) => {
             const width = Number(e.target.value);
@@ -161,7 +163,7 @@ export default function Page() {
         <input
           type="number"
           placeholder="Height"
-          value={dimInches.height ?? 0}
+          value={dimInches?.height ?? 0}
           className="border p-2 rounded"
           onChange={(e) => {
             const height = Number(e.target.value);

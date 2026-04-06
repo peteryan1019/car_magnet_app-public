@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
     // Give browser the temporary secure upload URL, and the final destination URL
     return NextResponse.json({ signedUrl, publicUrl });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GCS Signed URL Error:", error);
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal server error" }, { status: 500 });
   }
 }
