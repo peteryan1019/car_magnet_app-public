@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No image URL provided" }, { status: 400 })
     }
 
-    let buffer: any;
+    let buffer: Buffer;
 
     if (typeof imageUrl === "string" && imageUrl.startsWith("data:image")) {
       // Handle data URL (base64)
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         'Content-Type': 'image/jpeg',
         'Content-Length': buffer.length.toString()
       },
-      body: buffer
+      body: new Uint8Array(buffer)
     });
 
     if (!uploadRes.ok) {
