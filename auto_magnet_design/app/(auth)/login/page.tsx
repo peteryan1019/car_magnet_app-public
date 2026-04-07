@@ -1,4 +1,4 @@
-"use client"; // <--- Add this
+"use client";
 
 import Link from "next/link";
 import { useActionState } from "react"; // <--- Import hook
