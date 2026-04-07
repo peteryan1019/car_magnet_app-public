@@ -8,20 +8,6 @@ import Link from "next/link"
 import ModelPreview from "../components/ModelPreview"
 import { useEffect, useState } from "react"
 import Modal from "@mui/material/Modal"
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/rules-of-hooks */
-
-import { db } from "@/db";
-import { designs } from "@/db/schema";
-import { getDesigns } from "../actions/design-actions";
-import ExportButton from "../components/ExportButton";
-import DeleteDesignButton from "../components/deleteDesignButton"; 
-import SendEmailButton from "../components/EmailDesignButton";
-import Link from "next/link";
-import ModelPreview from "../components/ModelPreview";
-import { useEffect, useState } from "react";
-import Modal from '@mui/material/Modal'; 
 
 export default function MyDesignsPage() {
   const [userDesigns, setUserDesigns] = useState<any[]>([])
@@ -83,7 +69,7 @@ export default function MyDesignsPage() {
               
               {isPaid && index === 0 && (
                 <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                  Recently Bought
+                  Bought
                 </div>
               )}
 
