@@ -9,6 +9,7 @@ import { designs } from "@/db/schema";
 import { getDesigns } from "../actions/design-actions";
 import ExportButton from "../components/ExportButton";
 import DeleteDesignButton from "../components/deleteDesignButton"; 
+import SendEmailButton from "../components/EmailDesignButton";
 import Link from "next/link";
 import ModelPreview from "../components/ModelPreview";
 import { useEffect, useState } from "react";
@@ -99,6 +100,7 @@ export default function MyDesignsPage() {
                       <ExportButton imgsrc={design.imageUrl} leftSide={leftSide} needsCut={design.two_doors}/>
                       
                       {/* ADDED: The onDelete prop is now passed down to the button */}
+                      <SendEmailButton imageUrl={design.imageUrl} />
                       <DeleteDesignButton 
                         id={design.id} 
                         onDelete={() => handleDesignDeleted(design.id)}
