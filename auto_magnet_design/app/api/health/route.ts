@@ -22,7 +22,8 @@ export async function GET(request: Request) {
       "GEMINI_API_KEY",
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
-      "GOOGLE_CLOUD_STORAGE_BUCKET"
+      "GOOGLE_CLOUD_STORAGE_BUCKET",
+      "RESEND_API_KEY"
     ];
     
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);

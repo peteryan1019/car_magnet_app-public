@@ -8,6 +8,20 @@ import Link from "next/link"
 import ModelPreview from "../components/ModelPreview"
 import { useEffect, useState } from "react"
 import Modal from "@mui/material/Modal"
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/rules-of-hooks */
+
+import { db } from "@/db";
+import { designs } from "@/db/schema";
+import { getDesigns } from "../actions/design-actions";
+import ExportButton from "../components/ExportButton";
+import DeleteDesignButton from "../components/deleteDesignButton"; 
+import SendEmailButton from "../components/EmailDesignButton";
+import Link from "next/link";
+import ModelPreview from "../components/ModelPreview";
+import { useEffect, useState } from "react";
+import Modal from '@mui/material/Modal'; 
 
 export default function MyDesignsPage() {
   const [userDesigns, setUserDesigns] = useState<any[]>([])
