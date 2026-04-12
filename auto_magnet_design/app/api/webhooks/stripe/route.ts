@@ -7,12 +7,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
@@ -30,9 +24,10 @@ export async function POST(req: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (unknown) {
-    console.error("❌ Webhook signature verification failed:", err.message);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("❌ Webhook signature verification failed:", message);
+    return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
   }
 
   try {
@@ -46,12 +41,10 @@ export async function POST(req: NextRequest) {
 
         await upsertOrder({
           stripe_payment_id: pi.id,
-          stripe_customer_id: pi.customer as string,
           email: pi.receipt_email ?? undefined,
           amount: pi.amount,
           currency: pi.currency,
           status: pi.status,
-          metadata: pi.metadata,
         });
 
         break;
@@ -62,12 +55,10 @@ export async function POST(req: NextRequest) {
 
         await upsertOrder({
           stripe_payment_id: pi.id,
-          stripe_customer_id: pi.customer as string,
           email: pi.receipt_email ?? undefined,
           amount: pi.amount,
           currency: pi.currency,
           status: pi.status,
-          metadata: pi.metadata,
         });
 
         break;
@@ -78,12 +69,10 @@ export async function POST(req: NextRequest) {
 
         await upsertOrder({
           stripe_payment_id: pi.id,
-          stripe_customer_id: pi.customer as string,
           email: pi.receipt_email ?? undefined,
           amount: pi.amount,
           currency: pi.currency,
           status: pi.status,
-          metadata: pi.metadata,
         });
 
         break;
@@ -94,12 +83,10 @@ export async function POST(req: NextRequest) {
 
         await upsertOrder({
           stripe_payment_id: session.payment_intent as string,
-          stripe_customer_id: session.customer as string,
           email: session.customer_details?.email ?? undefined,
           amount: session.amount_total ?? 0,
           currency: session.currency ?? "usd",
           status: "completed",
-          metadata: session.metadata,
         });
 
         break;

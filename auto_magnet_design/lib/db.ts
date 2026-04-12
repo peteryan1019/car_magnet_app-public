@@ -26,9 +26,9 @@ export interface Order {
 // ------------------------
 
 /**
- * Insert a new order
+ * Insert a new order, or update it if one with the same stripe_payment_id already exists.
  */
-export async function insertOrder(order: {
+export async function upsertOrder(order: {
   stripe_payment_id: string;
   email?: string;
   amount: number;
@@ -45,7 +45,11 @@ export async function insertOrder(order: {
       ${order.status},
       NOW()
     )
-    ON CONFLICT (stripe_payment_id) DO NOTHING
+    ON CONFLICT (stripe_payment_id) DO UPDATE SET
+      email = COALESCE(EXCLUDED.email, orders.email),
+      amount = EXCLUDED.amount,
+      currency = EXCLUDED.currency,
+      status = EXCLUDED.status
     RETURNING *;
   `;
   return result as Order[];
