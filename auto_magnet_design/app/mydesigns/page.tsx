@@ -91,7 +91,7 @@ export default function MyDesignsPage() {
                     needsCut={design.two_doors}
                   />
 
-                  <DeleteDesignButton id={design.id} />
+                  <DeleteDesignButton id={design.id} onDelete={() => setUserDesigns(prev => prev.filter(d => d.id !== design.id))} />
                 </div>
               </div>
             </div>

@@ -23,6 +23,10 @@ export async function sendEmailAction(imageUrl: string) {
 
 const session = await getSession();
 
+  if (!session) {
+    return { success: false, error: "Not authenticated" };
+  }
+
   const [user] = await db
     .select({ email: users.email })
     .from(users)

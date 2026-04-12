@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15",
+  apiVersion: "2026-01-28.clover",
 });
 
 export async function POST() {
@@ -46,8 +46,9 @@ export async function POST() {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err: unknown) {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Stripe error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
