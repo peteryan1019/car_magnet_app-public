@@ -1,14 +1,17 @@
 //checkout/route.ts
 import Stripe from "stripe";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-01-28.clover",
 });
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    const { designId, imageUrl, carType, twoDoors, leftSide, userEmail } = body;
+
     const headersList = await headers();
 
     const forwardedProto = headersList.get("x-forwarded-proto");
@@ -30,18 +33,25 @@ export async function POST() {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
+      customer_email: userEmail,
       line_items: [
         {
           price_data: {
             currency: "usd",
-            product_data: { name: "Test Product" },
+            product_data: { name: "Car Magnet Print" },
             unit_amount: 1500,
           },
           quantity: 1,
         },
       ],
-
-      success_url: `${baseUrl}/payment/success`,
+      metadata: {
+        designId: String(designId),
+        imageUrl,
+        carType: carType || "medium",
+        twoDoors: String(twoDoors),
+        leftSide: String(leftSide),
+      },
+      success_url: `${baseUrl}/payment/success?design_id=${designId}`,
       cancel_url: `${baseUrl}/payment/cancel`,
     });
 

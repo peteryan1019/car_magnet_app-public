@@ -1,13 +1,11 @@
 // app/actions/sendEmail.ts
 "use server";
 
-import { Resend } from "resend";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import transporter from "@/lib/mailer";
 
 export async function sendEmailAction(imageUrl: string) {
   // Fetch the image and convert to a buffer
@@ -32,22 +30,23 @@ const session = await getSession();
     .from(users)
     .where(eq(users.id, session.id));
 
-  const { data, error } = await resend.emails.send({
-    from: "Auto Magnet Design <onboarding@resend.dev>",
-    to: user.email,
-    subject: "Here's your generated design!",
-    html: `<p>Hi,</p><p>Please find your design attached below.</p><p>Thanks!</p>`,
-    attachments: [
-      {
-        filename,
-        content: imageBuffer,
-      },
-    ],
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: user.email,
+      subject: "Here's your generated design!",
+      html: `<p>Hi,</p><p>Please find your design attached below.</p><p>Thanks!</p>`,
+      attachments: [
+        {
+          filename,
+          content: imageBuffer,
+        },
+      ],
+    });
 
-  if (error) {
-    return { success: false, error: error.message };
+    return { success: true, id: info.messageId };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to send email";
+    return { success: false, error: message };
   }
-
-  return { success: true, id: data?.id };
 }

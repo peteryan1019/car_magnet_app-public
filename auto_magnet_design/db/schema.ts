@@ -23,7 +23,18 @@ export const designs = pgTable("designs", {
   userId: integer("userId").references(() => users.id).notNull(),
   imageUrl: text("imageUrl").notNull(),
   dateCreated: timestamp("dateCreated").defaultNow().notNull(),
-  two_doors: boolean("two_doors").default(false).notNull(), 
+  two_doors: boolean("two_doors").default(false).notNull(),
+  purchased: boolean("purchased").default(false).notNull(),
+});
+
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  stripe_payment_id: text("stripe_payment_id").unique().notNull(),
+  email: text("email"),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull(),
+  status: text("status").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const preferences = pgTable("preferences", {

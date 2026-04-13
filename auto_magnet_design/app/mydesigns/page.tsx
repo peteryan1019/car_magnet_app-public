@@ -4,6 +4,7 @@
 import { getDesigns } from "../actions/design-actions"
 import ExportButton from "../components/ExportButton"
 import DeleteDesignButton from "../components/deleteDesignButton"
+import BuyButton from "../components/BuyButton"
 import Link from "next/link"
 import ModelPreview from "../components/ModelPreview"
 import { useEffect, useState } from "react"
@@ -16,7 +17,6 @@ export default function MyDesignsPage() {
   const [leftSide, setLeftSide] = useState(false)
   const [displayImg, setDisplayImg] = useState("/sample.png")
   const [open, setOpen] = useState(false)
-  const [isPaid, setIsPaid] = useState(false)
 
   async function setUpPage() {
     const designs = await getDesigns()
@@ -30,9 +30,6 @@ export default function MyDesignsPage() {
 
     t = localStorage.getItem("left_side")
     if (t === "true") setLeftSide(true)
-
-    const paid = localStorage.getItem("paid")
-    if (paid === "true") setIsPaid(true)
   }
 
   useEffect(() => {
@@ -67,7 +64,7 @@ export default function MyDesignsPage() {
               className="bg-slate-800 rounded-xl overflow-hidden relative"
             >
               
-              {isPaid && index === 0 && (
+              {design.purchased && (
                 <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
                   Bought
                 </div>
@@ -90,6 +87,14 @@ export default function MyDesignsPage() {
                     leftSide={leftSide}
                     needsCut={design.two_doors}
                   />
+
+                  {!design.purchased && (
+                    <BuyButton
+                      designId={design.id}
+                      imageUrl={design.imageUrl}
+                      twoDoors={design.two_doors}
+                    />
+                  )}
 
                   <DeleteDesignButton id={design.id} onDelete={() => setUserDesigns(prev => prev.filter(d => d.id !== design.id))} />
                 </div>

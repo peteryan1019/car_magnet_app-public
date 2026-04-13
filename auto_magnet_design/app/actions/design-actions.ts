@@ -2,11 +2,11 @@
 "use server";
 
 import { db } from "@/db";
-import { designs } from "@/db/schema";
+import { designs, users } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { eq, and } from "drizzle-orm"; // Make sure to import 'and' & 'eq'
+import { eq, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export async function saveDesignsAction(imageUrls: string[], two_doors: boolean) {
@@ -48,7 +48,16 @@ export async function getDesigns() {
   return userDesigns;
 }
 
-// Add this new action
+export async function getUserEmail(): Promise<string | null> {
+  const session = await getSession();
+  if (!session) return null;
+  const [user] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, session.id));
+  return user?.email ?? null;
+}
+
 export async function deleteDesignAction(designId: number) { // change to string if your DB uses UUIDs
   const session = await getSession();
   if (!session || !session.id) {

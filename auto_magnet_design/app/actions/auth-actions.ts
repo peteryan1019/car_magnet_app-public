@@ -7,10 +7,8 @@ import { eq, or, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import bcrypt from "bcrypt";
 import { z } from "zod";
-import { Resend } from "resend";
-import { randomInt } from "crypto"; // <-- Added
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { randomInt } from "crypto";
+import transporter from "@/lib/mailer";
 
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters").max(50),
@@ -55,20 +53,20 @@ export async function registerAction(prevState: unknown, formData: FormData) {
         set: { username, password_hash: hashedPassword, code, expiresAt }
       });
     
-    const { error: emailError } = await resend.emails.send({
-      from: "AutoMagnet <onboarding@resend.dev>", 
-      to: email, 
-      subject: "Your AutoMagnet Verification Code",
-      html: `
-        <div>
-          <h2>Welcome to AutoMagnet!</h2>
-          <p>Your verification code is: <strong>${code}</strong></p>
-          <p>This code will expire in 2 minutes.</p>
-        </div>
-      `,
-    });
-
-    if (emailError) {
+    try {
+      await transporter.sendMail({
+        from: process.env.GMAIL_USER,
+        to: email,
+        subject: "Your AutoMagnet Verification Code",
+        html: `
+          <div>
+            <h2>Welcome to AutoMagnet!</h2>
+            <p>Your verification code is: <strong>${code}</strong></p>
+            <p>This code will expire in 2 minutes.</p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
       console.error("[Email Sending Failed]:", emailError);
       return { error: "Failed to send verification email. Please try again." };
     }

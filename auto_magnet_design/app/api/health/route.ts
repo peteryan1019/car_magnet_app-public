@@ -23,7 +23,8 @@ export async function GET(request: Request) {
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
       "GOOGLE_CLOUD_STORAGE_BUCKET",
-      "RESEND_API_KEY"
+      "GMAIL_USER",
+      "GMAIL_APP_PASSWORD"
     ];
     
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);

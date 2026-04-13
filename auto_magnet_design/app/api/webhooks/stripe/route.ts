@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { upsertOrder } from "@/lib/db";
+import { db } from "@/db";
+import { designs } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { generateDesignPDFs } from "@/lib/pdf";
+import transporter from "@/lib/mailer";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -80,14 +85,85 @@ export async function POST(req: NextRequest) {
 
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        const userEmail = session.customer_details?.email;
 
         await upsertOrder({
           stripe_payment_id: session.payment_intent as string,
-          email: session.customer_details?.email ?? undefined,
+          email: userEmail ?? undefined,
           amount: session.amount_total ?? 0,
           currency: session.currency ?? "usd",
           status: "completed",
         });
+        console.log(`[Webhook] Order upserted: payment_id=${session.payment_intent}, email=${userEmail}, amount=${session.amount_total}`);
+
+        // Process design purchase if metadata is present
+        const meta = session.metadata;
+        if (meta?.designId) {
+          const designId = Number(meta.designId);
+
+          // Check if already purchased (idempotency for duplicate webhooks)
+          const [design] = await db
+            .select({ purchased: designs.purchased })
+            .from(designs)
+            .where(eq(designs.id, designId));
+
+          if (design && !design.purchased) {
+            // Mark design as purchased
+            await db
+              .update(designs)
+              .set({ purchased: true })
+              .where(eq(designs.id, designId));
+            console.log(`[Webhook] Design marked as purchased: designId=${designId}, imageUrl=${meta.imageUrl}`);
+
+            // Generate PDFs
+            const pdfBuffers = await generateDesignPDFs({
+              imageUrl: meta.imageUrl,
+              carType: meta.carType || "medium",
+              twoDoors: meta.twoDoors === "true",
+              leftSide: meta.leftSide === "true",
+            });
+
+            const attachments = Array.from(pdfBuffers.entries()).map(
+              ([name, buffer]) => ({
+                filename: `${name}-design.pdf`,
+                content: buffer,
+                contentType: "application/pdf",
+              })
+            );
+
+            // Email to customer
+            if (userEmail) {
+              await transporter.sendMail({
+                from: process.env.GMAIL_USER,
+                to: userEmail,
+                subject: "Your Car Magnet Order Confirmation",
+                html: `
+                  <h2>Thank you for your order!</h2>
+                  <p>Your print-ready design PDFs are attached to this email.</p>
+                  <p>Your magnets will be printed and shipped to you within <strong>7 business days</strong>.</p>
+                  <p>Thanks for choosing AutoMagnet!</p>
+                `,
+                attachments,
+              });
+              console.log(`[Webhook] Confirmation email sent to customer: to=${userEmail}, designId=${designId}, pdfs=${Array.from(pdfBuffers.keys()).join(", ")}`);
+            }
+
+            // Email to print shop
+            await transporter.sendMail({
+              from: process.env.GMAIL_USER,
+              to: "print-shop@example.com",
+              subject: `New Magnet Order - Design #${designId}`,
+              html: `
+                <h2>New Order Received</h2>
+                <p><strong>Customer:</strong> ${userEmail || "Unknown"}</p>
+                <p><strong>Design ID:</strong> ${designId}</p>
+                <p><strong>Order Amount:</strong> $${((session.amount_total ?? 0) / 100).toFixed(2)} ${session.currency?.toUpperCase()}</p>
+                <p>Print-ready PDFs are attached.</p>
+              `,
+              attachments,
+            });
+          }
+        }
 
         break;
       }
