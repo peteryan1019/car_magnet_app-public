@@ -35,7 +35,6 @@ export async function createSession(payload: { username: string; id: number }) {
   });
 }
 
-
 export async function getSession() {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
