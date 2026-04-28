@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "./route";
 
-// Mock the SQL query function
-const mockSql = vi.fn();
-vi.mock("@/lib/db", () => ({
-  sql: (...args: unknown[]) => mockSql(...args),
+// Mock the neon serverless driver (health check now imports neon directly)
+const { mockSql } = vi.hoisted(() => ({
+  mockSql: vi.fn(),
+}));
+
+vi.mock("@neondatabase/serverless", () => ({
+  neon: () => mockSql,
 }));
 
 function makeRequest(authHeader?: string): Request {
@@ -48,7 +51,6 @@ describe("GET /api/health", () => {
 
   it("returns 200 with ok status when all checks pass", async () => {
     process.env.HEALTH_CHECK_TOKEN = "test-token";
-    // Set all required env vars for the check
     process.env.DATABASE_URL = "postgresql://test";
     process.env.GEMINI_API_KEY = "test";
     process.env.STRIPE_SECRET_KEY = "test";

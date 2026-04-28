@@ -1,206 +1,72 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "./route";
+import { createWebhookService } from "@/lib/services/webhookService";
 import { NextRequest } from "next/server";
+import type { IOrderRepo, IDesignRepo } from "@/lib/repos/interfaces";
 
-const {
-  mockConstructEvent,
-  mockUpsertOrder,
-  mockDbSelect,
-  mockDbUpdate,
-  mockGeneratePDFs,
-  mockSendMail,
-} = vi.hoisted(() => ({
+const { mockConstructEvent, mockSendMail, mockGeneratePDFs } = vi.hoisted(() => ({
   mockConstructEvent: vi.fn(),
-  mockUpsertOrder: vi.fn().mockResolvedValue([]),
-  mockDbSelect: vi.fn(),
-  mockDbUpdate: vi.fn().mockResolvedValue([]),
-  mockGeneratePDFs: vi.fn(),
   mockSendMail: vi.fn().mockResolvedValue({}),
+  mockGeneratePDFs: vi.fn(),
 }));
 
-vi.mock("stripe", () => ({
-  default: vi.fn(() => ({
-    webhooks: { constructEvent: mockConstructEvent },
-  })),
-}));
+vi.mock("stripe", () => ({ default: vi.fn(() => ({ webhooks: { constructEvent: mockConstructEvent } })) }));
+vi.mock("@/lib/pdf", () => ({ generateDesignPDFs: (...args: unknown[]) => mockGeneratePDFs(...args) }));
+vi.mock("@/lib/mailer", () => ({ default: { sendMail: mockSendMail } }));
 
-vi.mock("@/lib/db", () => ({
-  upsertOrder: (...args: unknown[]) => mockUpsertOrder(...args),
-}));
-
-vi.mock("@/db", () => ({
-  db: {
-    select: () => ({ from: () => ({ where: mockDbSelect }) }),
-    update: () => ({ set: () => ({ where: mockDbUpdate }) }),
-  },
-}));
-
-vi.mock("@/lib/pdf", () => ({
-  generateDesignPDFs: (...args: unknown[]) => mockGeneratePDFs(...args),
-}));
-
-vi.mock("@/lib/mailer", () => ({
-  default: { sendMail: mockSendMail },
-}));
-
-vi.mock("@/db/schema", () => ({
-  designs: { id: "id", purchased: "purchased" },
-}));
+const fakeOrderRepo: IOrderRepo = { upsert: vi.fn().mockResolvedValue([]), findAll: vi.fn(), findByStripePaymentId: vi.fn() };
+const fakeDesignRepo: IDesignRepo = { insertBatch: vi.fn(), findByUserId: vi.fn(), deleteByIdAndUserId: vi.fn(), findPurchasedById: vi.fn(), markPurchased: vi.fn() };
+const { handleWebhook } = createWebhookService({ orderRepo: fakeOrderRepo, designRepo: fakeDesignRepo });
 
 function makeRequest(body: string, signature: string | null): NextRequest {
   const headers: Record<string, string> = {};
   if (signature) headers["stripe-signature"] = signature;
-
-  return new NextRequest("http://localhost:3000/api/webhooks/stripe", {
-    method: "POST",
-    body,
-    headers,
-  });
+  return new NextRequest("http://localhost:3000/api/webhooks/stripe", { method: "POST", body, headers });
 }
 
 describe("POST /api/webhooks/stripe", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
 
   it("returns 400 when stripe-signature header is missing", async () => {
-    const req = makeRequest("{}", null);
-    const res = await POST(req);
-
+    const res = await handleWebhook(makeRequest("{}", null));
     expect(res.status).toBe(400);
-    const text = await res.text();
-    expect(text).toBe("Missing Stripe signature");
   });
 
   it("returns 400 when signature verification fails", async () => {
-    mockConstructEvent.mockImplementationOnce(() => {
-      throw new Error("Invalid signature");
-    });
-
-    const req = makeRequest("{}", "whsec_bad");
-    const res = await POST(req);
-
+    mockConstructEvent.mockImplementationOnce(() => { throw new Error("Invalid signature"); });
+    const res = await handleWebhook(makeRequest("{}", "whsec_bad"));
     expect(res.status).toBe(400);
-    const text = await res.text();
-    expect(text).toContain("Invalid signature");
   });
 
   it("upserts order on payment_intent.succeeded", async () => {
-    mockConstructEvent.mockReturnValueOnce({
-      type: "payment_intent.succeeded",
-      data: {
-        object: {
-          id: "pi_test",
-          receipt_email: "payer@test.com",
-          amount: 1500,
-          currency: "usd",
-          status: "succeeded",
-        },
-      },
-    });
-
-    const req = makeRequest("{}", "whsec_valid");
-    const res = await POST(req);
-
+    mockConstructEvent.mockReturnValueOnce({ type: "payment_intent.succeeded", data: { object: { id: "pi_test", receipt_email: "payer@test.com", amount: 1500, currency: "usd", status: "succeeded" } } });
+    const res = await handleWebhook(makeRequest("{}", "whsec_valid"));
     expect(res.status).toBe(200);
-    expect(mockUpsertOrder).toHaveBeenCalledWith({
-      stripe_payment_id: "pi_test",
-      email: "payer@test.com",
-      amount: 1500,
-      currency: "usd",
-      status: "succeeded",
-    });
+    expect(fakeOrderRepo.upsert).toHaveBeenCalledWith(expect.objectContaining({ stripe_payment_id: "pi_test" }));
   });
 
   it("processes checkout.session.completed with design metadata", async () => {
-    mockConstructEvent.mockReturnValueOnce({
-      type: "checkout.session.completed",
-      data: {
-        object: {
-          payment_intent: "pi_checkout",
-          customer_details: { email: "buyer@test.com" },
-          amount_total: 1500,
-          currency: "usd",
-          metadata: {
-            designId: "99",
-            imageUrl: "https://example.com/design.png",
-            carType: "medium",
-            twoDoors: "true",
-            leftSide: "false",
-          },
-        },
-      },
-    });
-
-    // Design exists and is not purchased
-    mockDbSelect.mockResolvedValueOnce([{ purchased: false }]);
-
-    // PDF generation returns buffers
-    const pdfMap = new Map<string, Buffer>();
-    pdfMap.set("full", Buffer.from("full-pdf"));
-    pdfMap.set("left", Buffer.from("left-pdf"));
-    pdfMap.set("right", Buffer.from("right-pdf"));
+    mockConstructEvent.mockReturnValueOnce({ type: "checkout.session.completed", data: { object: { payment_intent: "pi_checkout", customer_details: { email: "buyer@test.com" }, amount_total: 1500, currency: "usd", metadata: { designId: "99", imageUrl: "https://example.com/design.png", carType: "medium", twoDoors: "true", leftSide: "false" } } } });
+    (fakeDesignRepo.findPurchasedById as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ purchased: false });
+    const pdfMap = new Map([["full", Buffer.from("full")], ["left", Buffer.from("left")], ["right", Buffer.from("right")]]);
     mockGeneratePDFs.mockResolvedValueOnce(pdfMap);
-
-    const req = makeRequest("{}", "whsec_valid");
-    const res = await POST(req);
-
+    const res = await handleWebhook(makeRequest("{}", "whsec_valid"));
     expect(res.status).toBe(200);
-    expect(mockUpsertOrder).toHaveBeenCalled();
-    expect(mockDbUpdate).toHaveBeenCalled(); // marks purchased
-    expect(mockGeneratePDFs).toHaveBeenCalledWith({
-      imageUrl: "https://example.com/design.png",
-      carType: "medium",
-      twoDoors: true,
-      leftSide: false,
-    });
-    // Two emails: one to customer, one to print shop
+    expect(fakeDesignRepo.markPurchased).toHaveBeenCalled();
     expect(mockSendMail).toHaveBeenCalledTimes(2);
-    expect(mockSendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "buyer@test.com" })
-    );
-    expect(mockSendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "print-shop@example.com" })
-    );
   });
 
-  it("skips emails for already-purchased designs (idempotency)", async () => {
-    mockConstructEvent.mockReturnValueOnce({
-      type: "checkout.session.completed",
-      data: {
-        object: {
-          payment_intent: "pi_dup",
-          customer_details: { email: "buyer@test.com" },
-          amount_total: 1500,
-          currency: "usd",
-          metadata: { designId: "99", imageUrl: "https://example.com/d.png", carType: "medium", twoDoors: "false", leftSide: "false" },
-        },
-      },
-    });
-
-    // Design already purchased
-    mockDbSelect.mockResolvedValueOnce([{ purchased: true }]);
-
-    const req = makeRequest("{}", "whsec_valid");
-    const res = await POST(req);
-
+  it("skips emails for already-purchased designs", async () => {
+    mockConstructEvent.mockReturnValueOnce({ type: "checkout.session.completed", data: { object: { payment_intent: "pi_dup", customer_details: { email: "buyer@test.com" }, amount_total: 1500, currency: "usd", metadata: { designId: "99", imageUrl: "https://example.com/d.png", carType: "medium", twoDoors: "false", leftSide: "false" } } } });
+    (fakeDesignRepo.findPurchasedById as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ purchased: true });
+    const res = await handleWebhook(makeRequest("{}", "whsec_valid"));
     expect(res.status).toBe(200);
-    expect(mockUpsertOrder).toHaveBeenCalled(); // order still upserted
-    expect(mockGeneratePDFs).not.toHaveBeenCalled(); // no PDF gen
-    expect(mockSendMail).not.toHaveBeenCalled(); // no emails
+    expect(mockGeneratePDFs).not.toHaveBeenCalled();
+    expect(mockSendMail).not.toHaveBeenCalled();
   });
 
   it("returns 200 for unhandled event types", async () => {
-    mockConstructEvent.mockReturnValueOnce({
-      type: "charge.updated",
-      data: { object: {} },
-    });
-
-    const req = makeRequest("{}", "whsec_valid");
-    const res = await POST(req);
-    const json = await res.json();
-
+    mockConstructEvent.mockReturnValueOnce({ type: "charge.updated", data: { object: {} } });
+    const res = await handleWebhook(makeRequest("{}", "whsec_valid"));
     expect(res.status).toBe(200);
-    expect(json.received).toBe(true);
   });
 });

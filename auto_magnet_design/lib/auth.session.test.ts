@@ -49,7 +49,8 @@ describe("Session Management", () => {
 
     it("sets secure flag based on NODE_ENV", async () => {
       const origEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = "production";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (process.env as any).NODE_ENV = "production";
 
       await createSession({ username: "testuser", id: 1 });
 
@@ -59,7 +60,8 @@ describe("Session Management", () => {
         expect.objectContaining({ secure: true })
       );
 
-      process.env.NODE_ENV = origEnv;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (process.env as any).NODE_ENV = origEnv;
     });
   });
 
