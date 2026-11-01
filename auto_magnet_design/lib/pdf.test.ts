@@ -3,17 +3,17 @@ import { generateDesignPDFs } from "./pdf";
 
 // Mock jsPDF
 const mockAddImage = vi.fn();
-const mockOutput = vi.fn(() => new ArrayBuffer(100));
+const mockOutput = vi.fn(function () { return new ArrayBuffer(100); });
 vi.mock("jspdf", () => ({
-  jsPDF: vi.fn(() => ({
+  jsPDF: vi.fn(function () { return ({
     addImage: mockAddImage,
     output: mockOutput,
-  })),
+  }); }),
 }));
 
 // Mock image-size
 vi.mock("image-size", () => ({
-  default: vi.fn(() => ({ width: 800, height: 400 })),
+  default: vi.fn(function () { return ({ width: 800, height: 400 }); }),
 }));
 
 // Mock fetch globally

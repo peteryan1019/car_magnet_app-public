@@ -136,7 +136,7 @@ export function createWebhookService(deps: {
 
               await transporter.sendMail({
                 from: process.env.GMAIL_USER,
-                to: "print-shop@example.com",
+                to: process.env.PRINT_SHOP_EMAIL || process.env.GMAIL_USER,
                 subject: `New Magnet Order - Design #${designId}`,
                 html: `
                   <h2>New Order Received</h2>
@@ -148,7 +148,7 @@ export function createWebhookService(deps: {
                 attachments,
               });
               console.log(
-                `[Webhook] Order email sent to print shop: to=print-shop@example.com, designId=${designId}, customer=${userEmail}, amount=$${((session.amount_total ?? 0) / 100).toFixed(2)}`
+                `[Webhook] Order email sent to print shop: designId=${designId}, customer=${userEmail}, amount=$${((session.amount_total ?? 0) / 100).toFixed(2)}`
               );
             }
           }

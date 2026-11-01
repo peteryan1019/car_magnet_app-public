@@ -7,7 +7,7 @@ const { mockConstructEvent, mockSendMail, mockGeneratePDFs } = vi.hoisted(() => 
   mockConstructEvent: vi.fn(), mockSendMail: vi.fn().mockResolvedValue({}), mockGeneratePDFs: vi.fn(),
 }));
 
-vi.mock("stripe", () => ({ default: vi.fn(() => ({ webhooks: { constructEvent: mockConstructEvent } })) }));
+vi.mock("stripe", () => ({ default: vi.fn(function () { return ({ webhooks: { constructEvent: mockConstructEvent } }); }) }));
 vi.mock("@/lib/pdf", () => ({ generateDesignPDFs: (...args: unknown[]) => mockGeneratePDFs(...args) }));
 vi.mock("@/lib/mailer", () => ({ default: { sendMail: mockSendMail } }));
 
@@ -52,7 +52,7 @@ describe("Webhook Route - Extended", () => {
     const res = await handleWebhook(makeRequest("{}", "whsec_valid"));
     expect(res.status).toBe(200);
     expect(mockSendMail).toHaveBeenCalledTimes(1);
-    expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({ to: "print-shop@example.com" }));
+    expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({ to: process.env.PRINT_SHOP_EMAIL || process.env.GMAIL_USER }));
   });
 
   it("returns 500 when handler throws", async () => {

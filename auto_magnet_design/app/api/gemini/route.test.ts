@@ -10,9 +10,9 @@ const { mockGenerateContent, mockGetAccessToken, mockFetch, mockReadFile } = vi.
 }));
 
 vi.mock("@google/genai", () => ({
-  GoogleGenAI: vi.fn(() => ({
+  GoogleGenAI: vi.fn(function () { return ({
     models: { generateContent: mockGenerateContent },
-  })),
+  }); }),
 }));
 
 vi.mock("@/lib/gcs", () => ({ getAccessToken: mockGetAccessToken }));

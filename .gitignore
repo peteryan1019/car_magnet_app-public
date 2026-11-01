@@ -1,2 +1,19 @@
 /*.txt
 doc/.DS_Store
+
+# Private configuration, local artifacts, and generated customer media
+.env*
+!.env.example
+.vercel/
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
+.DS_Store
+*.pdf
+doc/
+a2/
+collected_logos/
+generated_banners/

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
+import { assertSafeNodeRuntime } from "@/lib/node-runtime.mjs";
+
+export const dynamic = "force-dynamic";
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -8,13 +11,14 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const expectedToken = `Bearer ${process.env.HEALTH_CHECK_TOKEN}`;
 
-  if (!authHeader || authHeader !== expectedToken) {
+  if (!process.env.HEALTH_CHECK_TOKEN || !authHeader || authHeader !== expectedToken) {
     // If it's a random guy, pretend this page doesn't even exist or deny them
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // 2. Run the Deep Health Check (for the GitHub Robot)
   try {
+    const nodeVersion = assertSafeNodeRuntime();
     const dbPingStart = Date.now();
     await sql`SELECT 1;`;
     const dbPingTime = Date.now() - dbPingStart;
@@ -48,7 +52,8 @@ export async function GET(request: Request) {
         status: "ok", 
         timestamp: new Date().toISOString(),
         database: { status: "connected", latencyMs: dbPingTime },
-        services: "healthy"
+        services: "healthy",
+        runtime: { node: nodeVersion, node2shellPatched: true }
       },
       { status: 200 }
     );

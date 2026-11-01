@@ -46,3 +46,18 @@ next-env.d.ts
 /public/gemini_generated/
 
 /drizzle
+
+# Private configuration, local artifacts, and generated customer media
+.env*
+!.env.example
+.vercel/
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
+.DS_Store
+*.pdf
+/public/gemini-generated/
+/public/uploads/

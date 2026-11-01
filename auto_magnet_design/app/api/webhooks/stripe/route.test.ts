@@ -9,7 +9,7 @@ const { mockConstructEvent, mockSendMail, mockGeneratePDFs } = vi.hoisted(() => 
   mockGeneratePDFs: vi.fn(),
 }));
 
-vi.mock("stripe", () => ({ default: vi.fn(() => ({ webhooks: { constructEvent: mockConstructEvent } })) }));
+vi.mock("stripe", () => ({ default: vi.fn(function () { return ({ webhooks: { constructEvent: mockConstructEvent } }); }) }));
 vi.mock("@/lib/pdf", () => ({ generateDesignPDFs: (...args: unknown[]) => mockGeneratePDFs(...args) }));
 vi.mock("@/lib/mailer", () => ({ default: { sendMail: mockSendMail } }));
 

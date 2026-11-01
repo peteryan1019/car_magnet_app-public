@@ -1,36 +1,41 @@
-# car_magnet_app
+# AutoMagnet
 
-## Project Overview
+A Next.js application for generating and editing car-magnet designs, previewing them on vehicles, and placing print orders.
 
-This project will provide automated advertisement designs, primarily focusing on car magnet designs. Core advantages of this app will be in the design of two-door magnets catered to cars of any size. Two-door car magnets are magnets pieced together by two separate magnets, one on the front door, the second on the rear door. 
+## Development
 
-## Setup
+The application is in `auto_magnet_design/`. Use Node.js **24.22.1 or newer within 24.x** and pnpm **10.16.1**.
 
-This project using the NextJs framework with Typescript and App Routers.
-
-All src code resides in the **app** directory.
-
-The backend uses serverless postgres databases via NeonDB to enable future scaling, and all database operations are carried out using Drizzle ORM instead of raw SQL for type safety and security. 
-
-In order for the site to access the database, add the following to a .env file in the auto_magnet_design directory.
+```sh
+cd auto_magnet_design
+nvm install
+nvm use
+npm install --global pnpm@10.16.1
+pnpm install --frozen-lockfile
+cp .env.example .env.local
+pnpm dev
 ```
-DATABASE_URL="your_connection_url"
-JWT_SECRET="some_string"
+
+Populate `.env.local` with your own database, AI, storage, email, and Stripe configuration. Generate independent random values of at least 32 bytes for `JWT_SECRET` and `HEALTH_CHECK_TOKEN`. Never commit real credentials. Configure `PRINT_SHOP_EMAIL` for order notifications; it defaults to the configured sender account.
+
+## Validation
+
+```sh
+pnpm check:runtime
+pnpm test:runtime
+pnpm typecheck
+pnpm test:ci
+pnpm lint
 ```
-Where "your_connection_url" is a connection string for a NeonDB database for the site to use, and "some_string" is any string.
 
-To view the site, run `pnpm install` in the auto_magnet_design directory. Make sure to approve builds for post-install scripts if necessary.
+## Deployment
 
-Then run `pnpm run dev`, and navigate to the url shown in the terminal.
+Vercel's project root must be `auto_magnet_design`. `package.json` selects Node 24.x, with a minimum security baseline of 24.22.1. Vercel manages exact patch versions. Both the build and server startup reject runtimes below that baseline, which fixes Node2Shell (CVE-2026-111497). Keep Node updated as additional security fixes are released.
 
-A minimal register/login functionality is present for now. The full features list can be found in doc/sprint0/product.md. 
+Set production secrets in Vercel. The CI deployment uses `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and `HEALTH_CHECK_TOKEN` from GitHub Actions secrets. It deploys production configuration without assigning the production domain, verifies the authenticated `/api/health` response including the actual runtime version, then promotes that same deployment.
 
-## Contribution Guidelines
-Contributors can push documentations to main directly, but must open Pull Requests to main for functionality changes of the app.
+```sh
+curl --fail -H "Authorization: Bearer $HEALTH_CHECK_TOKEN" https://your-deployment.example/api/health
+```
 
-## Branching Strategy
-
-A variation of Git Flow will be used, with the only difference being when two people work on the same feature, their feature name will be suffixed with their names. E.g. feature/magnet_design_John
-
-## Ticketing Guidelines
-Immediate to-dos will be specified in the Slack channel. Product backlog tickets will be completed on Jira. 
+Course submissions, grading material, generated customer assets, and historical credentials have been excluded from the public source. Third-party asset licenses remain with their assets.

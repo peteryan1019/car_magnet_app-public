@@ -1,152 +1,74 @@
-name: Vercel CI/CD Pipeline
+name: Verify and deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  workflow_dispatch:
 
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  # Silence the GitHub Actions Node 20 deprecation warning
-  # FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+permissions:
+  contents: read
 
-# Tell the robot to run ALL commands inside your Next.js subfolder!
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 defaults:
   run:
-    working-directory: ./auto_magnet_design
+    working-directory: auto_magnet_design
 
 jobs:
-  # ==========================================
-  # CI: CACHING & SETUP
-  # ==========================================
-  setup:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with: { version: 9 }
-          
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: '20'
-          cache: 'pnpm' 
-          # Tell the cache exactly where the lockfile is
-          cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-          
-      - name: Install dependencies
-        run: pnpm install
-
-  # ==========================================
-  # CI: PARALLEL TASKS (Lint, Test, Security)
-  # ==========================================
-  lint:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: 
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-      - run: pnpm install
-      - run: pnpm run lint
-
-  unit-tests:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: 
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-      - run: pnpm install
-      - run: pnpm run test:ci
-
-  security-scan:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: 
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: auto_magnet_design/pnpm-lock.yaml
-      - run: pnpm install
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: auto_magnet_design/.nvmrc
+      - run: npm install --global pnpm@10.16.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:runtime
+      - run: pnpm test:runtime
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test:ci
       - run: pnpm audit --audit-level=high
 
-  # ==========================================
-  # CD: VERCEL CANARY & PROMOTION
-  # ==========================================
-  deploy-and-promote:
-    needs: [lint, unit-tests, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  deploy:
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      HEALTH_CHECK_TOKEN: ${{ secrets.HEALTH_CHECK_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel Environment Information
-        # FIX: Run at repo root, Vercel will read the dashboard settings to find the subfolder
-        working-directory: . 
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy Canary to Vercel
-        id: deploy-canary
-        # FIX: Run at repo root
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: auto_magnet_design/.nvmrc
+      - name: Install deployment CLI
+        run: npm install --global vercel@65.9.0
+      - name: Pull production project configuration
+        working-directory: .
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Stage production deployment
         working-directory: .
         run: |
-          echo "Deploying preview environment..."
-          PREVIEW_URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }})
-          echo "PREVIEW_URL=$PREVIEW_URL" >> $GITHUB_ENV
-          echo "Canary deployed at: $PREVIEW_URL"
-
-      - name: Canary Analysis
-        run: |
-          echo "Waiting 10 seconds for Canary URL to stabilize..."
-          sleep 10
-          
-          echo "Testing Canary Health Endpoint: ${{ env.PREVIEW_URL }}/api/health"
-          
-          # Pass the secret token to the endpoint!
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H 'Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}' \
-            ${{ env.PREVIEW_URL }}/api/health || echo "failed")
-          
-          if [ "$HTTP_STATUS" = "200" ]; then
-            echo "Canary Passed Deep Health Check! HTTP 200 OK."
-            echo "canary_passed=true" >> $GITHUB_ENV
-          else
-            echo "Canary Failed Deep Health Check! HTTP Status: $HTTP_STATUS"
-            # If it fails, print the actual error response so you can read it in the logs!
-            echo "Error Details:"
-            curl -s -H 'Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}' ${{ env.PREVIEW_URL }}/api/health
-            
-            echo "canary_passed=false" >> $GITHUB_ENV
-            exit 1 
-          fi
-
-      - name: Promote to Production
-        if: env.canary_passed == 'true'
-        # FIX: Run at repo root
+          DEPLOYMENT_URL=$(vercel deploy --prod --skip-domain --yes --force --token="$VERCEL_TOKEN")
+          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> "$GITHUB_ENV"
+      - name: Verify actual server runtime and health
+        run: node scripts/verify-deployment.mjs "$DEPLOYMENT_URL"
+      - name: Promote verified deployment
         working-directory: .
-        run: |
-          echo "Canary analysis successful! Promoting to Production..."
-          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
-          echo "Successfully promoted! Your public domain is now live."
+        run: vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+      - name: Verify production domain
+        run: node scripts/verify-deployment.mjs https://car-magnet-app.vercel.app

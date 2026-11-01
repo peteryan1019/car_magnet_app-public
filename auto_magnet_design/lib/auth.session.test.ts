@@ -11,12 +11,12 @@ const { mockSign, mockJwtVerify, mockCookieStore } = vi.hoisted(() => ({
 }));
 
 vi.mock("jose", () => ({
-  SignJWT: vi.fn(() => ({
+  SignJWT: vi.fn(function () { return ({
     setProtectedHeader: vi.fn().mockReturnThis(),
     setIssuedAt: vi.fn().mockReturnThis(),
     setExpirationTime: vi.fn().mockReturnThis(),
     sign: mockSign,
-  })),
+  }); }),
   jwtVerify: mockJwtVerify,
 }));
 

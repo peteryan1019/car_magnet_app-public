@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Static payment-intent mock used only by the unit tests"
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^pi_secret_abc123$''']
+paths = ['''auto_magnet_design/app/api/create-payment-intent/route\.test\.ts$''']

@@ -3,12 +3,12 @@ import { generateDesignPDFs } from "./pdf";
 
 const { mockAddImage, mockOutput, mockImageSize } = vi.hoisted(() => ({
   mockAddImage: vi.fn(),
-  mockOutput: vi.fn(() => new ArrayBuffer(100)),
+  mockOutput: vi.fn(function () { return new ArrayBuffer(100); }),
   mockImageSize: vi.fn(),
 }));
 
 vi.mock("jspdf", () => ({
-  jsPDF: vi.fn((opts) => {
+  jsPDF: vi.fn(function (opts) {
     // Store the options so we can assert on them
     const instance = {
       addImage: mockAddImage,

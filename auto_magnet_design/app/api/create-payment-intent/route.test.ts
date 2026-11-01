@@ -6,9 +6,9 @@ const { mockCreate } = vi.hoisted(() => ({
 }));
 
 vi.mock("stripe", () => ({
-  default: vi.fn(() => ({
+  default: vi.fn(function () { return ({
     paymentIntents: { create: mockCreate },
-  })),
+  }); }),
 }));
 
 describe("POST /api/create-payment-intent", () => {
