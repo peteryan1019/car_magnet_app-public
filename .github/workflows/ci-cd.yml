@@ -63,8 +63,10 @@ jobs:
       - name: Stage production deployment
         working-directory: .
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prod --skip-domain --yes --force --token="$VERCEL_TOKEN")
+          DEPLOYMENT_URL=$(vercel deploy --prod --skip-domain --yes --force --no-wait --token="$VERCEL_TOKEN")
           echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> "$GITHUB_ENV"
+      - name: Wait for hosted build and reject blocked deployments
+        run: node scripts/wait-for-deployment.mjs "$DEPLOYMENT_URL"
       - name: Verify actual server runtime and health
         run: node scripts/verify-deployment.mjs "$DEPLOYMENT_URL"
       - name: Promote verified deployment
