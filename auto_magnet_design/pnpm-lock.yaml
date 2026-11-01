@@ -80,7 +80,7 @@ importers:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
       stripe:
-        specifier: ^20.3.1
+        specifier: 20.3.1
         version: 20.3.1(@types/node@24.19.2)
       three:
         specifier: ^0.183.2
